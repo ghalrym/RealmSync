@@ -26,7 +26,7 @@ pip install realm-sync-api
 from realm_sync_api import RealmSyncApi
 from realm_sync_api.models import Player
 from realm_sync_api.hooks import RealmSyncHook
-from realm_sync_api.setup.redis import RealmSyncRedis
+from realm_sync_api.dependencies.redis import RealmSyncRedis
 
 # Create the API instance
 app = RealmSyncApi(web_manager_perfix="/admin")
@@ -49,6 +49,104 @@ def player_created(player: Player):
 - FastAPI
 - Redis (optional, for caching)
 - PostgreSQL (optional, for persistent storage)
+
+## Testing
+
+### Installation
+
+To run tests, first install the development dependencies:
+
+```bash
+pip install -e ".[dev]"
+```
+
+### Running Tests
+
+After installation, you can run tests using the `runtests` command:
+
+```bash
+runtests
+```
+
+This will run all tests with coverage reporting and enforce a 95% coverage requirement.
+
+### Additional Test Options
+
+You can also pass any pytest arguments to `runtests`:
+
+```bash
+runtests -v                    # Verbose output
+runtests tests/test_specific.py # Run specific test file
+runtests -k "test_name"        # Run tests matching a pattern
+runtests --tb=short            # Shorter traceback format
+```
+
+Alternatively, you can run tests directly with pytest:
+
+```bash
+pytest tests/
+```
+
+### Coverage
+
+The project maintains a 95% code coverage requirement. Coverage reports are generated in both terminal and XML formats:
+
+- Terminal output: Shows coverage summary and missing lines
+- XML report: Saved to `coverage.xml` for CI/CD integration
+
+To view an HTML coverage report:
+
+```bash
+pytest tests/ --cov=realm_sync_api --cov-report=html
+# Then open htmlcov/index.html in your browser
+```
+
+## Linting
+
+The project uses several linting tools to maintain code quality:
+
+- **Ruff**: Fast Python linter with multiple rule sets (pycodestyle, pyflakes, isort, etc.)
+- **Black**: Code formatter
+- **MyPy**: Static type checker
+- **Custom Import Checker**: Checks for imports inside functions
+
+### Running Linters
+
+Run all linting checks:
+
+```bash
+ruff check .
+black --check .
+mypy realm_sync_api
+```
+
+### Custom Import Checker
+
+The project includes a custom linter that detects imports inside functions instead of at the module level. This helps maintain code quality by ensuring imports are at the top of files.
+
+After installing the package (with `pip install -e ".[dev]"`), you can use the `check-imports` command:
+
+```bash
+# Check all files
+check-imports .
+
+# Check specific files or directories
+check-imports tests/ realm_sync_api/
+
+# Use ruff-compatible output format
+check-imports . --format ruff
+
+# Exclude additional patterns
+check-imports . --exclude htmlcov --exclude dist
+```
+
+You can also run it directly as a Python module:
+
+```bash
+python -m realm_sync_api.check_imports .
+```
+
+The checker will report any imports found inside function definitions and suggest moving them to the module level. You can ignore specific imports by adding `# noqa: I001` or `# noqa` comments on the same line.
 
 ## Documentation
 
