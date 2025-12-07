@@ -4,11 +4,11 @@ from typing import Any, Protocol
 import fastapi_swagger_dark as fsd
 from fastapi import APIRouter, FastAPI
 
+from realm_sync_api.dependencies.hooks import add_hook, get_hooks
+from realm_sync_api.dependencies.postgres import RealmSyncPostgres, set_postgres_client
+from realm_sync_api.dependencies.redis import RealmSyncRedis, set_redis_client
 from realm_sync_api.hooks import RealmSyncHook
 from realm_sync_api.routes import router
-from realm_sync_api.setup.hooks import add_hook, get_hooks
-from realm_sync_api.setup.postgres import RealmSyncPostgres, set_postgres_client
-from realm_sync_api.setup.redis import RealmSyncRedis, set_redis_client
 from realm_sync_api.web_manager.web_manager_router import WebManagerRouter
 
 

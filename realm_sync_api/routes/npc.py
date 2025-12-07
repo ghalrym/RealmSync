@@ -1,9 +1,9 @@
 from pydantic import BaseModel
 
+from realm_sync_api.dependencies.redis import get_redis_client
 from realm_sync_api.models import NPC
 from realm_sync_api.realm_sync_retriever import RealmSyncRetriever
 from realm_sync_api.realm_sync_router import RealmSyncRouter
-from realm_sync_api.setup.redis import get_redis_client
 
 
 class ListRequestArgs(BaseModel): ...
