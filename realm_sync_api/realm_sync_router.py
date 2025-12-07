@@ -19,10 +19,7 @@ class RealmSyncRouter(APIRouter):
         # Get the __orig_bases__ to find the RealmSyncRetriever generic
         if hasattr(retriever_class, "__orig_bases__"):
             for base in retriever_class.__orig_bases__:
-                if (
-                    hasattr(base, "__origin__")
-                    and base.__origin__ is RealmSyncRetriever
-                ):
+                if hasattr(base, "__origin__") and base.__origin__ is RealmSyncRetriever:
                     type_args = get_args(base)
                     if len(type_args) >= 2:
                         model_type = type_args[0]
@@ -55,52 +52,52 @@ class RealmSyncRouter(APIRouter):
 
                 return retriever.list(body)
             except ValueError as e:
-                raise HTTPException(status_code=400, detail=str(e))
+                raise HTTPException(status_code=400, detail=str(e)) from e
             except Exception as e:
                 raise HTTPException(
                     status_code=500, detail=f"Internal server error: {str(e)}"
-                )
+                ) from e
 
         @self.post("/", response_model=model_type)
         async def create_retriever(data: model_type) -> model_type:
             try:
                 return retriever.create(data)
             except ValueError as e:
-                raise HTTPException(status_code=400, detail=str(e))
+                raise HTTPException(status_code=400, detail=str(e)) from e
             except Exception as e:
                 raise HTTPException(
                     status_code=500, detail=f"Internal server error: {str(e)}"
-                )
+                ) from e
 
         @self.get("/{key}", response_model=model_type)
         async def get_retriever(key: str) -> model_type:
             try:
                 return retriever.get(key)
             except ValueError as e:
-                raise HTTPException(status_code=404, detail=str(e))
+                raise HTTPException(status_code=404, detail=str(e)) from e
             except Exception as e:
                 raise HTTPException(
                     status_code=500, detail=f"Internal server error: {str(e)}"
-                )
+                ) from e
 
         @self.put("/{key}", response_model=model_type)
         async def update_retriever(key: str, data: model_type) -> model_type:
             try:
                 return retriever.update(key, data)
             except ValueError as e:
-                raise HTTPException(status_code=400, detail=str(e))
+                raise HTTPException(status_code=400, detail=str(e)) from e
             except Exception as e:
                 raise HTTPException(
                     status_code=500, detail=f"Internal server error: {str(e)}"
-                )
+                ) from e
 
         @self.delete("/{key}", response_model=None)
         async def delete_retriever(key: str) -> None:
             try:
                 return retriever.delete(key)
             except ValueError as e:
-                raise HTTPException(status_code=404, detail=str(e))
+                raise HTTPException(status_code=404, detail=str(e)) from e
             except Exception as e:
                 raise HTTPException(
                     status_code=500, detail=f"Internal server error: {str(e)}"
-                )
+                ) from e
