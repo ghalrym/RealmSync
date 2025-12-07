@@ -20,14 +20,6 @@ Install from PyPI (when published):
 pip install realm-sync-api
 ```
 
-Or install from source:
-
-```bash
-git clone https://github.com/ghalrym/RealmSync.git
-cd RealmSync
-pip install -e .
-```
-
 ## Quick Start
 
 ```python
