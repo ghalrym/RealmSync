@@ -1,0 +1,52 @@
+{% extends "base.html" %}
+
+{% block title %}{% if item %}Edit{% else %}Create{% endif %} {{ model_name }} - RealmSync API Manager{% endblock %}
+
+{% block content %}
+<div class="database-viewer">
+    <div class="form-header">
+        <h1>{% if item %}Edit{% else %}Create{% endif %} {{ model_name }}</h1>
+        <a href="{{ web_prefix }}/{{ model_name_lower }}" class="btn btn-secondary">Back to List</a>
+    </div>
+
+    <form method="post"
+        action="{% if item %}{{ web_prefix }}/{{ model_name_lower }}/{{ item.id }}/edit{% else %}{{ web_prefix }}/{{ model_name_lower }}/create{% endif %}"
+        class="form">
+        {% for field in fields %}
+        <div class="form-group">
+            <label for="{{ field.name }}">
+                {{ field.name|title }}
+                {% if field.required %}<span class="required">*</span>{% endif %}
+            </label>
+            {% if field.type == "textarea" %}
+            <textarea id="{{ field.name }}" name="{{ field.name }}" class="form-control" {% if field.required
+                %}required{% endif %}
+                rows="4">{% if item %}{{ item.get(field.name, '')|default('', true) }}{% endif %}</textarea>
+            {% elif field.name == "dependencies" or field.name == "quests" %}
+            <input type="text" id="{{ field.name }}" name="{{ field.name }}" class="form-control" {% if field.required
+                %}required{% endif %}
+                value="{% if item and item.get(field.name) %}{{ item.get(field.name)|join(', ') }}{% endif %}"
+                placeholder="Comma-separated values">
+            {% elif field.name == "location" %}
+            <textarea id="{{ field.name }}" name="{{ field.name }}" class="form-control" {% if field.required
+                %}required{% endif %}
+                rows="3">{% if item and item.get(field.name) %}{{ item.get(field.name)|tojson }}{% else %}{"location": "", "x": 0.0, "y": 0.0, "z": 0.0}{% endif %}</textarea>
+            {% else %}
+            <input type="{{ field.type }}" id="{{ field.name }}" name="{{ field.name }}" class="form-control" {% if
+                field.required %}required{% endif %} {% if field.name=="id" and item %}readonly{% endif %}
+                value="{% if item %}{{ item.get(field.name, '')|default('', true) }}{% endif %}">
+            {% endif %}
+            {% if field.help %}
+            <small class="form-help">{{ field.help }}</small>
+            {% endif %}
+        </div>
+        {% endfor %}
+
+        <div class="form-actions">
+            <button type="submit" class="btn btn-primary">{% if item %}Update{% else %}Create{% endif %} {{ model_name
+                }}</button>
+            <a href="{{ web_prefix }}/{{ model_name_lower }}" class="btn btn-secondary">Cancel</a>
+        </div>
+    </form>
+</div>
+{% endblock %}

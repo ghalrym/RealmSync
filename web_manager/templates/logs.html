@@ -1,0 +1,217 @@
+{% extends "base.html" %}
+
+{% block title %}Server Logs - RealmSync API Manager{% endblock %}
+
+{% block content %}
+<div class="database-viewer">
+    <div class="list-header">
+        <h1>Server Logs</h1>
+        <div class="view-actions">
+            <div class="log-filters">
+                <label class="filter-label">Filter:</label>
+                <button id="filter-debug" class="btn btn-filter btn-sm active" data-level="DEBUG">Debug</button>
+                <button id="filter-info" class="btn btn-filter btn-sm active" data-level="INFO">Info</button>
+                <button id="filter-error" class="btn btn-filter btn-sm active" data-level="ERROR">Error</button>
+                <button id="filter-warning" class="btn btn-filter btn-sm active" data-level="WARNING">Warning</button>
+                <button id="filter-critical" class="btn btn-filter btn-sm active"
+                    data-level="CRITICAL">Critical</button>
+            </div>
+            <button id="clear-logs" class="btn btn-secondary btn-sm">Clear</button>
+            <button id="pause-logs" class="btn btn-secondary btn-sm">Pause</button>
+        </div>
+    </div>
+    <div class="logs-container">
+        <div id="logs-content" class="logs-content"></div>
+    </div>
+</div>
+
+<script>
+    let ws;
+    let isPaused = false;
+    let logsContainer = document.getElementById('logs-content');
+    let autoScroll = true;
+    let pingInterval = null;
+    let reconnectTimeout = null;
+    let allLogEntries = []; // Store all log entries for filtering
+    let activeFilters = new Set(['DEBUG', 'INFO', 'ERROR', 'WARNING', 'CRITICAL']); // All levels active by default
+
+    function connectWebSocket() {
+        // Clear any existing reconnect timeout
+        if (reconnectTimeout) {
+            clearTimeout(reconnectTimeout);
+            reconnectTimeout = null;
+        }
+
+        // Close existing connection if any
+        if (ws && ws.readyState !== WebSocket.CLOSED) {
+            ws.close();
+        }
+
+        const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+        const webPrefix = '{{ web_prefix }}';
+        const wsUrl = `${protocol}//${window.location.host}${webPrefix}/logs/ws`;
+
+        try {
+            ws = new WebSocket(wsUrl);
+
+            ws.onopen = function () {
+                console.log('WebSocket connected');
+                // Clear any existing ping interval
+                if (pingInterval) {
+                    clearInterval(pingInterval);
+                }
+                // Send ping to keep connection alive (only set once)
+                pingInterval = setInterval(() => {
+                    if (ws && ws.readyState === WebSocket.OPEN) {
+                        try {
+                            ws.send('ping');
+                        } catch (e) {
+                            console.error('Error sending ping:', e);
+                        }
+                    }
+                }, 30000);
+            };
+
+            ws.onmessage = function (event) {
+                if (event.data === 'pong') {
+                    return;
+                }
+
+                try {
+                    const logEntry = JSON.parse(event.data);
+                    if (!isPaused) {
+                        addLogEntry(logEntry);
+                    }
+                } catch (e) {
+                    console.error('Error parsing log entry:', e, event.data);
+                }
+            };
+
+            ws.onerror = function (error) {
+                console.error('WebSocket error:', error);
+            };
+
+            ws.onclose = function (event) {
+                console.log('WebSocket disconnected', event.code, event.reason);
+                // Clear ping interval
+                if (pingInterval) {
+                    clearInterval(pingInterval);
+                    pingInterval = null;
+                }
+                // Reconnect after delay (only if not a normal closure)
+                if (event.code !== 1000) {
+                    reconnectTimeout = setTimeout(connectWebSocket, 3000);
+                }
+            };
+        } catch (e) {
+            console.error('Error creating WebSocket:', e);
+            reconnectTimeout = setTimeout(connectWebSocket, 3000);
+        }
+    }
+
+    function addLogEntry(logEntry) {
+        // Store the log entry
+        allLogEntries.push(logEntry);
+
+        // Limit stored entries to last 10000 for performance
+        if (allLogEntries.length > 10000) {
+            allLogEntries.shift();
+        }
+
+        const logLine = document.createElement('div');
+        logLine.className = `log-entry log-${logEntry.level.toLowerCase()}`;
+        logLine.dataset.level = logEntry.level;
+
+        const timestamp = document.createElement('span');
+        timestamp.className = 'log-timestamp';
+        timestamp.textContent = new Date(logEntry.timestamp).toLocaleTimeString();
+
+        const level = document.createElement('span');
+        level.className = 'log-level';
+        level.textContent = logEntry.level;
+
+        const message = document.createElement('span');
+        message.className = 'log-message';
+        message.textContent = logEntry.message;
+
+        logLine.appendChild(timestamp);
+        logLine.appendChild(level);
+        logLine.appendChild(message);
+
+        // Only append if this level is in active filters
+        if (activeFilters.has(logEntry.level)) {
+            logsContainer.appendChild(logLine);
+        } else {
+            // Still add to DOM but hide it (for quick filtering)
+            logLine.style.display = 'none';
+            logsContainer.appendChild(logLine);
+        }
+
+        // Auto-scroll to bottom if enabled
+        if (autoScroll) {
+            logsContainer.scrollTop = logsContainer.scrollHeight;
+        }
+
+        // Limit to last 5000 lines in DOM for performance
+        while (logsContainer.children.length > 5000) {
+            logsContainer.removeChild(logsContainer.firstChild);
+        }
+    }
+
+    function applyFilters() {
+        // Show/hide log entries based on active filters
+        const logEntries = logsContainer.querySelectorAll('.log-entry');
+        logEntries.forEach(entry => {
+            const level = entry.dataset.level;
+            if (activeFilters.has(level)) {
+                entry.style.display = 'flex';
+            } else {
+                entry.style.display = 'none';
+            }
+        });
+
+        // If auto-scroll is enabled, scroll to bottom
+        if (autoScroll) {
+            logsContainer.scrollTop = logsContainer.scrollHeight;
+        }
+    }
+
+    // Set up filter buttons
+    document.querySelectorAll('.btn-filter').forEach(btn => {
+        btn.addEventListener('click', function () {
+            const level = this.dataset.level;
+            if (activeFilters.has(level)) {
+                activeFilters.delete(level);
+                this.classList.remove('active');
+            } else {
+                activeFilters.add(level);
+                this.classList.add('active');
+            }
+            applyFilters();
+        });
+    });
+
+    document.getElementById('clear-logs').addEventListener('click', function () {
+        logsContainer.innerHTML = '';
+        allLogEntries = [];
+    });
+
+    document.getElementById('pause-logs').addEventListener('click', function () {
+        isPaused = !isPaused;
+        const btn = document.getElementById('pause-logs');
+        btn.textContent = isPaused ? 'Resume' : 'Pause';
+        if (!isPaused && autoScroll) {
+            logsContainer.scrollTop = logsContainer.scrollHeight;
+        }
+    });
+
+    // Auto-scroll toggle on scroll
+    logsContainer.addEventListener('scroll', function () {
+        const isAtBottom = logsContainer.scrollHeight - logsContainer.scrollTop <= logsContainer.clientHeight + 10;
+        autoScroll = isAtBottom;
+    });
+
+    // Connect on page load
+    connectWebSocket();
+</script>
+{% endblock %}

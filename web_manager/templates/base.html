@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}RealmSync API Manager{% endblock %}</title>
+    <link rel="stylesheet" href="{{ request.url_for('serve_static', filename='style.css') }}">
+</head>
+
+<body>
+    <div class="main-layout">
+        <aside class="sidebar">
+            <div class="sidebar-header">
+                <div class="logo-container">
+                    <img src="{{ request.url_for('serve_static', filename='logo.png') }}" alt="RealmSync Logo"
+                        class="sidebar-logo">
+                </div>
+                <h2>Control Panel</h2>
+            </div>
+            <nav class="sidebar-nav">
+                <a href="{{ web_prefix }}/player"
+                    class="sidebar-item {% if request.url.path.startswith(web_prefix + '/player') %}active{% endif %}">
+                    <span class="sidebar-icon">📊</span>
+                    <span class="sidebar-label">Players</span>
+                </a>
+                <a href="{{ web_prefix }}/quest"
+                    class="sidebar-item {% if request.url.path.startswith(web_prefix + '/quest') %}active{% endif %}">
+                    <span class="sidebar-icon">📋</span>
+                    <span class="sidebar-label">Quests</span>
+                </a>
+                <a href="{{ web_prefix }}/map"
+                    class="sidebar-item {% if request.url.path.startswith(web_prefix + '/map') %}active{% endif %}">
+                    <span class="sidebar-icon">🗺️</span>
+                    <span class="sidebar-label">Maps</span>
+                </a>
+                <a href="{{ web_prefix }}/npc"
+                    class="sidebar-item {% if request.url.path.startswith(web_prefix + '/npc') %}active{% endif %}">
+                    <span class="sidebar-icon">👤</span>
+                    <span class="sidebar-label">NPCs</span>
+                </a>
+                <a href="{{ web_prefix }}/item"
+                    class="sidebar-item {% if request.url.path.startswith(web_prefix + '/item') %}active{% endif %}">
+                    <span class="sidebar-icon">🎒</span>
+                    <span class="sidebar-label">Items</span>
+                </a>
+                <a href="{{ web_prefix }}/logs"
+                    class="sidebar-item {% if request.url.path.startswith(web_prefix + '/logs') %}active{% endif %}">
+                    <span class="sidebar-icon">📜</span>
+                    <span class="sidebar-label">Server Logs</span>
+                </a>
+            </nav>
+        </aside>
+
+        <main class="main-content">
+            {% block content %}{% endblock %}
+        </main>
+    </div>
+
+    <footer class="footer">
+        <p>&copy; 2024 RealmSync API Manager</p>
+    </footer>
+</body>
+
+</html>

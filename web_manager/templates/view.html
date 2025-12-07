@@ -1,0 +1,43 @@
+{% extends "base.html" %}
+
+{% block title %}{{ model_name }}: {{ item.name }} - RealmSync API Manager{% endblock %}
+
+{% block content %}
+<div class="database-viewer">
+    <div class="view-header">
+        <h1>{{ item.name }}</h1>
+        <div class="view-actions">
+            <a href="{{ web_prefix }}/{{ model_name_lower }}" class="btn btn-secondary">Back to List</a>
+            <a href="{{ web_prefix }}/{{ model_name_lower }}/{{ item.id }}/edit" class="btn btn-primary">Edit</a>
+            <form method="post" action="{{ web_prefix }}/{{ model_name_lower }}/{{ item.id }}/delete"
+                style="display: inline;"
+                onsubmit="return confirm('Are you sure you want to delete this {{ model_name_lower }}?');">
+                <button type="submit" class="btn btn-delete">Delete</button>
+            </form>
+        </div>
+    </div>
+
+    <div class="view-content">
+        <dl class="detail-list">
+            {% for key, value in item.items() %}
+            <div class="detail-item">
+                <dt>{{ key|title }}</dt>
+                <dd>
+                    {% if value is mapping %}
+                    <pre>{{ value|tojson(indent=2) }}</pre>
+                    {% elif value is iterable and value is not string %}
+                    <ul>
+                        {% for v in value %}
+                        <li>{{ v }}</li>
+                        {% endfor %}
+                    </ul>
+                    {% else %}
+                    {{ value }}
+                    {% endif %}
+                </dd>
+            </div>
+            {% endfor %}
+        </dl>
+    </div>
+</div>
+{% endblock %}

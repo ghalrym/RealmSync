@@ -1,0 +1,51 @@
+{% extends "base.html" %}
+
+{% block title %}{{ model_name }}s - RealmSync API Manager{% endblock %}
+
+{% block content %}
+<div class="database-viewer">
+    <div class="list-header">
+        <h1>{{ model_name }}s</h1>
+        <a href="{{ web_prefix }}/{{ model_name_lower }}/create" class="btn btn-primary">Create New {{ model_name }}</a>
+    </div>
+
+    {% if items %}
+    <div style="overflow-x: auto;">
+        <table class="data-table">
+            <thead>
+                <tr>
+                    <th>ID</th>
+                    <th>Name</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for item in items %}
+                <tr>
+                    <td><code>{{ item.id }}</code></td>
+                    <td>{{ item.name }}</td>
+                    <td class="actions">
+                        <a href="{{ web_prefix }}/{{ model_name_lower }}/{{ item.id }}"
+                            class="btn btn-sm btn-view">View</a>
+                        <a href="{{ web_prefix }}/{{ model_name_lower }}/{{ item.id }}/edit"
+                            class="btn btn-sm btn-edit">Edit</a>
+                        <form method="post" action="{{ web_prefix }}/{{ model_name_lower }}/{{ item.id }}/delete"
+                            style="display: inline;"
+                            onsubmit="return confirm('Are you sure you want to delete this {{ model_name_lower }}?');">
+                            <button type="submit" class="btn btn-sm btn-delete">Delete</button>
+                        </form>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    {% else %}
+    <div class="empty-state">
+        <p>No {{ model_name_lower }}s found.</p>
+        <a href="{{ web_prefix }}/{{ model_name_lower }}/create" class="btn btn-primary">Create the first {{
+            model_name_lower }}</a>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}
