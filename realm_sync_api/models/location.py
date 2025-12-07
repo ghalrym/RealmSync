@@ -1,7 +1,7 @@
-from pydantic import BaseModel
+from realm_sync_api.models._base import RealmSyncModel
 
 
-class Location(BaseModel):
+class Location(RealmSyncModel):
     location: str
     x: float
     y: float

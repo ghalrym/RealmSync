@@ -1,7 +1,7 @@
-from pydantic import BaseModel
+from realm_sync_api.models._base import RealmSyncModel
 
 
-class Quest(BaseModel):
+class Quest(RealmSyncModel):
     id: str
     name: str
     description: str

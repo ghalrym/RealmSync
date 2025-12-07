@@ -1,7 +1,7 @@
-from pydantic import BaseModel
+from realm_sync_api.models._base import RealmSyncModel
 
 
-class NPC(BaseModel):
+class NPC(RealmSyncModel):
     id: str
     name: str
     faction: str

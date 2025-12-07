@@ -1,6 +1,6 @@
-from pydantic import BaseModel
+from realm_sync_api.models._base import RealmSyncModel
 
 
-class Map(BaseModel):
+class Map(RealmSyncModel):
     id: str
     name: str

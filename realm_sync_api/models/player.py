@@ -1,9 +1,8 @@
-from pydantic import BaseModel
-
+from realm_sync_api.models._base import RealmSyncModel
 from realm_sync_api.models.location import Location
 
 
-class Player(BaseModel):
+class Player(RealmSyncModel):
     id: str
     name: str
     server: str
