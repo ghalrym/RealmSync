@@ -39,6 +39,7 @@ dependencies = [
 dev = [
     "pytest>=7.4.0",
     "pytest-asyncio>=0.21.0",
+    "pytest-cov>=4.1.0",
     "black>=23.0.0",
     "ruff>=0.1.0",
     "mypy>=1.5.0",
@@ -111,4 +112,25 @@ python_files = ["test_*.py"]
 python_classes = ["Test*"]
 python_functions = ["test_*"]
 asyncio_mode = "auto"
+addopts = "--cov=realm_sync_api --cov-report=term-missing --cov-report=xml"
+
+[tool.coverage.run]
+source = ["realm_sync_api"]
+omit = [
+    "*/tests/*",
+    "*/__pycache__/*",
+    "*/setup.py",
+]
+
+[tool.coverage.report]
+exclude_lines = [
+    "pragma: no cover",
+    "def __repr__",
+    "raise AssertionError",
+    "raise NotImplementedError",
+    "if __name__ == .__main__.:",
+    "if TYPE_CHECKING:",
+    "@abstractmethod",
+]
+fail_under = 95
 
