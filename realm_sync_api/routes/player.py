@@ -1,5 +1,6 @@
 from pydantic import BaseModel
 
+from realm_sync_api.hooks import RealmSyncHook
 from realm_sync_api.models import Player
 from realm_sync_api.realm_sync_retriever import RealmSyncRetriever
 from realm_sync_api.realm_sync_router import RealmSyncRouter
@@ -48,6 +49,8 @@ class PlayerRetriever(RealmSyncRetriever[Player, ListRequestArgs]):
         # Store player as JSON
         json_data = data.model_dump_json()
         redis_client.set(key, json_data)
+        # Call player_created hook
+        self.call_hooks(RealmSyncHook.PLAYER_CREATED, data)
         return data
 
     def update(self, id: str, data: Player) -> Player:
@@ -62,6 +65,8 @@ class PlayerRetriever(RealmSyncRetriever[Player, ListRequestArgs]):
         # Store updated player as JSON
         json_data = data.model_dump_json()
         redis_client.set(key, json_data)
+        # Call player_updated hook
+        self.call_hooks(RealmSyncHook.PLAYER_UPDATED, data)
         return data
 
     def delete(self, id: str) -> None:
@@ -70,7 +75,11 @@ class PlayerRetriever(RealmSyncRetriever[Player, ListRequestArgs]):
         # Check if player exists (exists returns 0 or 1, not boolean)
         if redis_client.exists(key) == 0:
             raise ValueError(f"Player with id '{id}' not found")
+        # Get player data before deletion for hook
+        player_data = self.get(id)
         redis_client.delete(key)
+        # Call player_deleted hook
+        self.call_hooks(RealmSyncHook.PLAYER_DELETED, player_data)
 
 
 router = RealmSyncRouter(prefix="/player", tags=["player"])
