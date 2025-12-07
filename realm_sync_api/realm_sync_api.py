@@ -1,4 +1,3 @@
-from collections import defaultdict
 from collections.abc import Callable
 from typing import Any, Protocol
 
@@ -7,6 +6,7 @@ from fastapi import APIRouter, FastAPI
 
 from realm_sync_api.hooks import RealmSyncHook
 from realm_sync_api.routes import router
+from realm_sync_api.setup.hooks import add_hook, get_hooks
 from realm_sync_api.setup.postgres import RealmSyncPostgres, set_postgres_client
 from realm_sync_api.setup.redis import RealmSyncRedis, set_redis_client
 from realm_sync_api.web_manager.web_manager_router import WebManagerRouter
@@ -31,8 +31,6 @@ class RealmSyncApi(FastAPI):
             **kwargs,
         )
 
-        self.hooks: dict[RealmSyncHook, list[RealmSyncApiHook]] = defaultdict(list)
-
         self.include_router(router)
         if web_manager_perfix:
             self.include_router(WebManagerRouter(prefix=web_manager_perfix))
@@ -56,7 +54,7 @@ class RealmSyncApi(FastAPI):
         """
 
         def decorator(func: Callable[..., Any]) -> Callable[..., Any]:
-            self.hooks[hook].append(func)
+            add_hook(hook, func)
             return func
 
         return decorator
@@ -68,7 +66,8 @@ class RealmSyncApi(FastAPI):
         set_postgres_client(postgres_client)
 
     def call_hooks(self, hook: RealmSyncHook, *args: Any, **kwargs: Any) -> None:
-        for func in self.hooks[hook]:
+        hooks = get_hooks()
+        for func in hooks[hook]:
             func(*args, **kwargs)
 
     def get(
