@@ -1,9 +1,9 @@
 import os
 
-from hooks import RealmSyncHook
-from models import Player
 from realm_sync_api import RealmSyncApi
-from setup.redis import RealmSyncRedis
+from realm_sync_api.hooks import RealmSyncHook
+from realm_sync_api.models import Player
+from realm_sync_api.setup.redis import RealmSyncRedis
 
 app = RealmSyncApi(web_manager_perfix="/admin")
 

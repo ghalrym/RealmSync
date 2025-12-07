@@ -4,7 +4,7 @@ from typing import Any
 from fastapi import APIRouter, HTTPException, Request
 from fastapi.responses import FileResponse, HTMLResponse
 
-from web_manager.routers import (
+from realm_sync_api.web_manager.routers import (
     item_router,
     logs_router,
     map_router,
@@ -12,7 +12,7 @@ from web_manager.routers import (
     players_router,
     quests_router,
 )
-from web_manager.routers.tempate import templates
+from realm_sync_api.web_manager.routers.tempate import templates
 
 router = APIRouter(prefix="/web", tags=["web_manager"])
 

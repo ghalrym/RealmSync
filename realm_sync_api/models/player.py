@@ -1,6 +1,6 @@
 from pydantic import BaseModel
 
-from models.location import Location
+from realm_sync_api.models.location import Location
 
 
 class Player(BaseModel):
