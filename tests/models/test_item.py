@@ -1,6 +1,7 @@
 """Tests for Item model."""
 
 import pytest
+from pydantic import ValidationError
 
 from realm_sync_api.models.item import Item
 
@@ -39,7 +40,7 @@ def test_item_json_deserialization():
 
 def test_item_missing_field():
     """Test that Item requires all fields."""
-    with pytest.raises(Exception):  # Pydantic validation error
+    with pytest.raises(ValidationError):
         Item(id="item1", name="Sword")  # Missing type
 
 

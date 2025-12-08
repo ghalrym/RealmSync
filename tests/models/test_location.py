@@ -1,6 +1,7 @@
 """Tests for Location model."""
 
 import pytest
+from pydantic import ValidationError
 
 from realm_sync_api.models.location import Location
 
@@ -48,5 +49,5 @@ def test_location_json_deserialization():
 
 def test_location_missing_field():
     """Test that Location requires all fields."""
-    with pytest.raises(Exception):  # Pydantic validation error
+    with pytest.raises(ValidationError):
         Location(location="Test", x=1.0)  # Missing y and z

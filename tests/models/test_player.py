@@ -1,6 +1,7 @@
 """Tests for Player model."""
 
 import pytest
+from pydantic import ValidationError
 
 from realm_sync_api.models.location import Location
 from realm_sync_api.models.player import Player
@@ -59,14 +60,14 @@ def test_player_json_deserialization():
 def test_player_missing_field():
     """Test that Player requires all fields."""
     location = Location(location="Spawn", x=0.0, y=0.0, z=0.0)
-    with pytest.raises(Exception):  # Pydantic validation error
+    with pytest.raises(ValidationError):
         Player(id="player1", name="Test Player", server="server1", location=location)
         # Missing faction
 
 
 def test_player_location_required():
     """Test that Player requires a Location object."""
-    with pytest.raises(Exception):  # Pydantic validation error
+    with pytest.raises(ValidationError):
         Player(
             id="player1",
             name="Test Player",

@@ -1,6 +1,7 @@
 """Tests for NPC model."""
 
 import pytest
+from pydantic import ValidationError
 
 from realm_sync_api.models.npc import NPC
 
@@ -48,7 +49,7 @@ def test_npc_json_deserialization():
 
 def test_npc_missing_field():
     """Test that NPC requires all fields."""
-    with pytest.raises(Exception):  # Pydantic validation error
+    with pytest.raises(ValidationError):
         NPC(id="npc1", name="Merchant", faction="A")  # Missing quests
 
 

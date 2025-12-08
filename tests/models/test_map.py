@@ -1,6 +1,7 @@
 """Tests for Map model."""
 
 import pytest
+from pydantic import ValidationError
 
 from realm_sync_api.models.map import Map
 
@@ -36,5 +37,5 @@ def test_map_json_deserialization():
 
 def test_map_missing_field():
     """Test that Map requires all fields."""
-    with pytest.raises(Exception):  # Pydantic validation error
+    with pytest.raises(ValidationError):
         Map(id="map1")  # Missing name

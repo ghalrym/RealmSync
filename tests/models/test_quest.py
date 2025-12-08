@@ -1,6 +1,7 @@
 """Tests for Quest model."""
 
 import pytest
+from pydantic import ValidationError
 
 from realm_sync_api.models.quest import Quest
 
@@ -66,7 +67,7 @@ def test_quest_json_deserialization():
 
 def test_quest_missing_field():
     """Test that Quest requires all fields."""
-    with pytest.raises(Exception):  # Pydantic validation error
+    with pytest.raises(ValidationError):
         Quest(id="quest1", name="Find Item", description="Find the magic sword")
         # Missing dependencies
 
