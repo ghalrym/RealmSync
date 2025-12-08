@@ -24,19 +24,7 @@ jobs:
           python -m pip install --upgrade pip
           pip install -e ".[dev]"
 
-      - name: Run ruff
+      - name: Run linting checks
         run: |
-          ruff check .
-
-      - name: Run black (check)
-        run: |
-          black --check .
-
-      - name: Run mypy
-        run: |
-          mypy realm_sync_api || true
-
-      - name: Run check-imports
-        run: |
-          check-imports . --exclude htmlcov --exclude dist --exclude scripts
+          rs-lint
 
