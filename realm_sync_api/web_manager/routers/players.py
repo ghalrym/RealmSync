@@ -86,22 +86,7 @@ async def create_player(
     )
 
 
-@router.get("/{id}", response_class=HTMLResponse)
-async def view_player(request: Request, id: str):
-    """View a single player."""
-    player = await get_from_api(request, f"/player/{id}")
-    return templates.TemplateResponse(
-        "view.html",
-        {
-            "request": request,
-            "model_name": "Player",
-            "model_name_lower": "player",
-            "item": player,
-        },
-    )
-
-
-@router.get("/{id}/edit", response_class=HTMLResponse)
+@router.get("/edit/{id}", response_class=HTMLResponse)
 async def edit_player_form(request: Request, id: str):
     """Show edit player form."""
     player = await get_from_api(request, f"/player/{id}")
@@ -128,7 +113,7 @@ async def edit_player_form(request: Request, id: str):
     )
 
 
-@router.post("/{id}/edit", response_class=RedirectResponse)
+@router.post("/edit/{id}", response_class=RedirectResponse)
 async def update_player(
     request: Request,
     id: str,
@@ -158,7 +143,7 @@ async def update_player(
     )
 
 
-@router.post("/{id}/delete", response_class=RedirectResponse)
+@router.post("/delete/{id}", response_class=RedirectResponse)
 async def delete_player(request: Request, id: str):
     """Delete a player."""
     await delete_from_api(request, f"/player/{id}")
@@ -166,4 +151,19 @@ async def delete_player(request: Request, id: str):
     return RedirectResponse(
         url=f"{web_prefix}/player",
         status_code=status.HTTP_303_SEE_OTHER,
+    )
+
+
+@router.get("/{id}", response_class=HTMLResponse)
+async def view_player(request: Request, id: str):
+    """View a single player."""
+    player = await get_from_api(request, f"/player/{id}")
+    return templates.TemplateResponse(
+        "view.html",
+        {
+            "request": request,
+            "model_name": "Player",
+            "model_name_lower": "player",
+            "item": player,
+        },
     )

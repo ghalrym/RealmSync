@@ -28,21 +28,6 @@ async def list_maps(request: Request):
     )
 
 
-@router.get("/{id}", response_class=HTMLResponse)
-async def view_map(request: Request, id: str):
-    """View a single map."""
-    map_item = await get_from_api(request, f"/map/{id}")
-    return templates.TemplateResponse(
-        "view.html",
-        {
-            "request": request,
-            "model_name": "Map",
-            "model_name_lower": "map",
-            "item": map_item,
-        },
-    )
-
-
 @router.get("/create", response_class=HTMLResponse)
 async def create_map_form(request: Request):
     """Show create map form."""
@@ -76,7 +61,7 @@ async def create_map(
     )
 
 
-@router.get("/{id}/edit", response_class=HTMLResponse)
+@router.get("/edit/{id}", response_class=HTMLResponse)
 async def edit_map_form(request: Request, id: str):
     """Show edit map form."""
     map_item = await get_from_api(request, f"/map/{id}")
@@ -95,7 +80,7 @@ async def edit_map_form(request: Request, id: str):
     )
 
 
-@router.post("/{id}/edit", response_class=RedirectResponse)
+@router.post("/edit/{id}", response_class=RedirectResponse)
 async def update_map(
     request: Request,
     id: str,
@@ -110,11 +95,26 @@ async def update_map(
     )
 
 
-@router.post("/{id}/delete", response_class=RedirectResponse)
+@router.post("/delete/{id}", response_class=RedirectResponse)
 async def delete_map(request: Request, id: str):
     """Delete a map."""
     await delete_from_api(request, f"/map/{id}")
     return RedirectResponse(
         url="/web/map",
         status_code=status.HTTP_303_SEE_OTHER,
+    )
+
+
+@router.get("/{id}", response_class=HTMLResponse)
+async def view_map(request: Request, id: str):
+    """View a single map."""
+    map_item = await get_from_api(request, f"/map/{id}")
+    return templates.TemplateResponse(
+        "view.html",
+        {
+            "request": request,
+            "model_name": "Map",
+            "model_name_lower": "map",
+            "item": map_item,
+        },
     )

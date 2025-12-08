@@ -28,21 +28,6 @@ async def list_quests(request: Request):
     )
 
 
-@router.get("/{id}", response_class=HTMLResponse)
-async def view_quest(request: Request, id: str):
-    """View a single quest."""
-    quest = await get_from_api(request, f"/quest/{id}")
-    return templates.TemplateResponse(
-        "view.html",
-        {
-            "request": request,
-            "model_name": "Quest",
-            "model_name_lower": "quest",
-            "item": quest,
-        },
-    )
-
-
 @router.get("/create", response_class=HTMLResponse)
 async def create_quest_form(request: Request):
     """Show create quest form."""
@@ -77,11 +62,7 @@ async def create_quest(
     dependencies: str = Form(""),
 ):
     """Create a new quest."""
-    deps_list = (
-        [d.strip() for d in dependencies.split(",") if d.strip()]
-        if dependencies
-        else []
-    )
+    deps_list = [d.strip() for d in dependencies.split(",") if d.strip()] if dependencies else []
     quest_data = {
         "id": id,
         "name": name,
@@ -92,7 +73,7 @@ async def create_quest(
     return RedirectResponse(url="/web/quest", status_code=status.HTTP_303_SEE_OTHER)
 
 
-@router.get("/{id}/edit", response_class=HTMLResponse)
+@router.get("/edit/{id}", response_class=HTMLResponse)
 async def edit_quest_form(request: Request, id: str):
     """Show edit quest form."""
     quest = await get_from_api(request, f"/quest/{id}")
@@ -118,7 +99,7 @@ async def edit_quest_form(request: Request, id: str):
     )
 
 
-@router.post("/{id}/edit", response_class=RedirectResponse)
+@router.post("/edit/{id}", response_class=RedirectResponse)
 async def update_quest(
     request: Request,
     id: str,
@@ -127,11 +108,7 @@ async def update_quest(
     dependencies: str = Form(""),
 ):
     """Update a quest."""
-    deps_list = (
-        [d.strip() for d in dependencies.split(",") if d.strip()]
-        if dependencies
-        else []
-    )
+    deps_list = [d.strip() for d in dependencies.split(",") if d.strip()] if dependencies else []
     quest_data = {
         "id": id,
         "name": name,
@@ -139,13 +116,26 @@ async def update_quest(
         "dependencies": deps_list,
     }
     await update_in_api(request, f"/quest/{id}", quest_data)
-    return RedirectResponse(
-        url=f"/web/quest/{id}", status_code=status.HTTP_303_SEE_OTHER
-    )
+    return RedirectResponse(url=f"/web/quest/{id}", status_code=status.HTTP_303_SEE_OTHER)
 
 
-@router.post("/{id}/delete", response_class=RedirectResponse)
+@router.post("/delete/{id}", response_class=RedirectResponse)
 async def delete_quest(request: Request, id: str):
     """Delete a quest."""
     await delete_from_api(request, f"/quest/{id}")
     return RedirectResponse(url="/web/quest", status_code=status.HTTP_303_SEE_OTHER)
+
+
+@router.get("/{id}", response_class=HTMLResponse)
+async def view_quest(request: Request, id: str):
+    """View a single quest."""
+    quest = await get_from_api(request, f"/quest/{id}")
+    return templates.TemplateResponse(
+        "view.html",
+        {
+            "request": request,
+            "model_name": "Quest",
+            "model_name_lower": "quest",
+            "item": quest,
+        },
+    )

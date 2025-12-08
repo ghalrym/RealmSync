@@ -4,11 +4,10 @@ from typing import Any, Protocol
 import fastapi_swagger_dark as fsd
 from fastapi import APIRouter, FastAPI
 
-from realm_sync_api.hooks import RealmSyncHook
+from realm_sync_api.dependencies.hooks import RealmSyncHook, add_hook, get_hooks
+from realm_sync_api.dependencies.postgres import RealmSyncPostgres, set_postgres_client
+from realm_sync_api.dependencies.redis import RealmSyncRedis, set_redis_client
 from realm_sync_api.routes import router
-from realm_sync_api.setup.hooks import add_hook, get_hooks
-from realm_sync_api.setup.postgres import RealmSyncPostgres, set_postgres_client
-from realm_sync_api.setup.redis import RealmSyncRedis, set_redis_client
 from realm_sync_api.web_manager.web_manager_router import WebManagerRouter
 
 
@@ -70,7 +69,7 @@ class RealmSyncApi(FastAPI):
         for func in hooks[hook]:
             func(*args, **kwargs)
 
-    def get(
+    def get(  # type: ignore[override]
         self,
         path: str,
         **kwargs: Any,
@@ -83,9 +82,9 @@ class RealmSyncApi(FastAPI):
             async def get_item(item_id: str):
                 return {"item_id": item_id}
         """
-        return super().get(path, self.call_hooks, **kwargs)
+        return super().get(path, **kwargs)
 
-    def post(
+    def post(  # type: ignore[override]
         self,
         path: str,
         **kwargs: Any,
@@ -98,9 +97,9 @@ class RealmSyncApi(FastAPI):
             async def create_item(item: Item):
                 return item
         """
-        return super().post(path, self.call_hooks, **kwargs)
+        return super().post(path, **kwargs)
 
-    def put(
+    def put(  # type: ignore[override]
         self,
         path: str,
         **kwargs: Any,
@@ -113,9 +112,9 @@ class RealmSyncApi(FastAPI):
             async def update_item(item_id: str, item: Item):
                 return item
         """
-        return super().put(path, self.call_hooks, **kwargs)
+        return super().put(path, **kwargs)
 
-    def delete(
+    def delete(  # type: ignore[override]
         self,
         path: str,
         **kwargs: Any,
@@ -128,4 +127,4 @@ class RealmSyncApi(FastAPI):
             async def delete_item(item_id: str):
                 return {"message": "Item deleted"}
         """
-        return super().delete(path, self.call_hooks, **kwargs)
+        return super().delete(path, **kwargs)

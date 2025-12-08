@@ -19,7 +19,7 @@ async def fetch_from_api(request: Request, endpoint: str) -> Any:
             response.raise_for_status()
             return response.json()
         except httpx.HTTPError as e:
-            raise HTTPException(status_code=500, detail=f"API Error: {str(e)}")
+            raise HTTPException(status_code=500, detail=f"API Error: {str(e)}") from e
 
 
 async def get_from_api(request: Request, endpoint: str) -> Any:
@@ -31,7 +31,7 @@ async def get_from_api(request: Request, endpoint: str) -> Any:
             response.raise_for_status()
             return response.json()
         except httpx.HTTPError as e:
-            raise HTTPException(status_code=500, detail=f"API Error: {str(e)}")
+            raise HTTPException(status_code=500, detail=f"API Error: {str(e)}") from e
 
 
 async def create_in_api(request: Request, endpoint: str, data: dict) -> Any:
@@ -46,9 +46,9 @@ async def create_in_api(request: Request, endpoint: str, data: dict) -> Any:
             raise HTTPException(
                 status_code=500,
                 detail=f"API Error: {e.response.status_code} {e.response.reason_phrase} for url '{e.request.url}'",
-            )
+            ) from e
         except httpx.HTTPError as e:
-            raise HTTPException(status_code=500, detail=f"API Error: {str(e)}")
+            raise HTTPException(status_code=500, detail=f"API Error: {str(e)}") from e
 
 
 async def update_in_api(request: Request, endpoint: str, data: dict) -> Any:
@@ -60,7 +60,7 @@ async def update_in_api(request: Request, endpoint: str, data: dict) -> Any:
             response.raise_for_status()
             return response.json()
         except httpx.HTTPError as e:
-            raise HTTPException(status_code=500, detail=f"API Error: {str(e)}")
+            raise HTTPException(status_code=500, detail=f"API Error: {str(e)}") from e
 
 
 async def delete_from_api(request: Request, endpoint: str) -> None:
@@ -71,4 +71,4 @@ async def delete_from_api(request: Request, endpoint: str) -> None:
             response = await client.delete(f"{base_url}{endpoint}")
             response.raise_for_status()
         except httpx.HTTPError as e:
-            raise HTTPException(status_code=500, detail=f"API Error: {str(e)}")
+            raise HTTPException(status_code=500, detail=f"API Error: {str(e)}") from e

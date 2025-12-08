@@ -3,10 +3,9 @@ from typing import Generic, TypeVar
 
 from pydantic import BaseModel
 
-from realm_sync_api.hooks import RealmSyncHook
-from realm_sync_api.setup.hooks import get_hooks
+from realm_sync_api.dependencies.hooks import RealmSyncHook, get_hooks
 
-ModelType = TypeVar("Model", bound=BaseModel)
+ModelType = TypeVar("ModelType", bound=BaseModel)
 ListRequestArgs = TypeVar("ListRequestArgs", bound=BaseModel)
 
 
@@ -21,21 +20,21 @@ class RealmSyncRetriever(ABC, Generic[ModelType, ListRequestArgs]):
             func(*args, **kwargs)
 
     @abstractmethod
-    def get(self, id: str) -> ModelType:
+    async def get(self, id: str) -> ModelType:
         pass
 
     @abstractmethod
-    def list(self, body: ListRequestArgs) -> list[ModelType]:
+    async def list(self, body: ListRequestArgs) -> list[ModelType]:
         pass
 
     @abstractmethod
-    def create(self, data: ModelType) -> ModelType:
+    async def create(self, data: ModelType) -> ModelType:
         pass
 
     @abstractmethod
-    def update(self, id: str, data: ModelType) -> ModelType:
+    async def update(self, id: str, data: ModelType) -> ModelType:
         pass
 
     @abstractmethod
-    def delete(self, id: str) -> None:
+    async def delete(self, id: str) -> None:
         pass

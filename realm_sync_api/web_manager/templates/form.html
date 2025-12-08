@@ -10,7 +10,7 @@
     </div>
 
     <form method="post"
-        action="{% if item %}{{ web_prefix }}/{{ model_name_lower }}/{{ item.id }}/edit{% else %}{{ web_prefix }}/{{ model_name_lower }}/create{% endif %}"
+        action="{% if item %}{{ web_prefix }}/{{ model_name_lower }}/edit/{{ item.id }}{% else %}{{ web_prefix }}/{{ model_name_lower }}/create{% endif %}"
         class="form">
         {% for field in fields %}
         <div class="form-group">

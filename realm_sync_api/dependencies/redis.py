@@ -1,11 +1,17 @@
 from typing import Any
 
-from redis import Redis
+from redis.asyncio import Redis
 
 
 class RealmSyncRedis(Redis):
     def __init__(self, host: str, port: int, db: int, **kwargs: Any) -> None:
-        super().__init__(host, port, db, decode_responses=True, **kwargs)
+        super().__init__(
+            host=host,
+            port=port,
+            db=db,
+            decode_responses=True,
+            **kwargs,
+        )
 
 
 REDIS_CLIENT: RealmSyncRedis | None = None
