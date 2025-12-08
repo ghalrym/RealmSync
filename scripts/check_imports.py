@@ -30,8 +30,14 @@ class ImportChecker(ast.NodeVisitor):
             return "# noqa: I001" in line or "# noqa" in line
         return False
 
-    def visit_FunctionDef(self, node: ast.FunctionDef | ast.AsyncFunctionDef) -> None:
+    def visit_FunctionDef(self, node: ast.FunctionDef) -> None:
         """Visit function definitions and track them in the stack."""
+        self.function_stack.append(node.name)
+        self.generic_visit(node)
+        self.function_stack.pop()
+
+    def visit_AsyncFunctionDef(self, node: ast.AsyncFunctionDef) -> None:
+        """Visit async function definitions and track them in the stack."""
         self.function_stack.append(node.name)
         self.generic_visit(node)
         self.function_stack.pop()
