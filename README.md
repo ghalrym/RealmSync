@@ -62,23 +62,23 @@ pip install -e ".[dev]"
 
 ### Running Tests
 
-After installation, you can run tests using the `runtests` command:
+After installation, you can run tests using the `re-test` command:
 
 ```bash
-runtests
+re-test
 ```
 
 This will run all tests with coverage reporting and enforce a 95% coverage requirement.
 
 ### Additional Test Options
 
-You can also pass any pytest arguments to `runtests`:
+You can also pass any pytest arguments to `re-test`:
 
 ```bash
-runtests -v                    # Verbose output
-runtests tests/test_specific.py # Run specific test file
-runtests -k "test_name"        # Run tests matching a pattern
-runtests --tb=short            # Shorter traceback format
+re-test -v                    # Verbose output
+re-test tests/test_specific.py # Run specific test file
+re-test -k "test_name"        # Run tests matching a pattern
+re-test --tb=short            # Shorter traceback format
 ```
 
 Alternatively, you can run tests directly with pytest:
@@ -117,14 +117,6 @@ Run all linting checks:
 rs-lint
 ```
 
-Or run individual tools:
-
-```bash
-ruff check .          # Linting
-ruff format --check . # Formatting check
-mypy realm_sync_api   # Type checking
-```
-
 ### Custom Import Checker
 
 The project includes a custom linter that detects imports inside functions instead of at the module level. This helps maintain code quality by ensuring imports are at the top of files.
@@ -145,11 +137,6 @@ check-imports . --format ruff
 check-imports . --exclude htmlcov --exclude dist
 ```
 
-You can also run it directly as a Python module:
-
-```bash
-python -m realm_sync_api.check_imports .
-```
 
 The checker will report any imports found inside function definitions and suggest moving them to the module level. You can ignore specific imports by adding `# noqa: I001` or `# noqa` comments on the same line.
 
