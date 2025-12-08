@@ -1,0 +1,68 @@
+# CodeRabbit Configuration
+# yaml-language-server: $schema=https://coderabbit.ai/integrations/schema.v2.json
+
+language: "en-US"
+early_access: false
+
+reviews:
+  # Review profile: "chill" for friendly reviews, "assertive" for strict reviews
+  profile: "chill"
+  
+  # Don't automatically request changes, just comment
+  request_changes_workflow: false
+  
+  # Include high-level summary of changes
+  high_level_summary: true
+  
+  # Include poems in reviews (optional, can be disabled)
+  poem: false
+  
+  # Show review status
+  review_status: true
+  
+  # Collapse walkthrough sections
+  collapse_walkthrough: false
+  
+  # Auto-review enabled
+  auto_review:
+    enabled: true
+    drafts: false
+
+chat:
+  # Enable auto-reply in chat
+  auto_reply: true
+
+# Paths to ignore in reviews
+ignore:
+  paths:
+    - "**/__pycache__/**"
+    - "**/htmlcov/**"
+    - "**/dist/**"
+    - "**/build/**"
+    - "**/.pytest_cache/**"
+    - "**/coverage.xml"
+    - "**/.coverage"
+    - "**/realm_sync_api.egg-info/**"
+    - "**/node_modules/**"
+    - "**/.venv/**"
+    - "**/venv/**"
+
+# Language-specific settings
+language_settings:
+  python:
+    # Focus on Python best practices
+    focus_areas:
+      - "code_quality"
+      - "performance"
+      - "security"
+      - "test_coverage"
+      - "documentation"
+    
+    # Check for common Python issues
+    checks:
+      - "type_hints"
+      - "error_handling"
+      - "async_await"
+      - "pydantic_models"
+      - "fastapi_routes"
+
