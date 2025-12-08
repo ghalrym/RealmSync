@@ -197,12 +197,6 @@ async def test_broadcast_logs_task_exception_handling():
 @pytest.mark.asyncio
 async def test_websocket_exception_handling():
     """Test WebSocket exception handling paths."""
-    from fastapi import FastAPI
-    from fastapi.testclient import TestClient
-
-    from realm_sync_api.web_manager.routers.logs import log_buffer
-    from realm_sync_api.web_manager.web_manager_router import WebManagerRouter
-
     app = FastAPI()
     app.include_router(WebManagerRouter(prefix="/web"))
     app.include_router(logs_router)
@@ -278,12 +272,6 @@ async def test_websocket_send_json_exception_in_batch():
 @pytest.mark.asyncio
 async def test_websocket_batch_delay():
     """Test WebSocket batch delay (line 136)."""
-    from fastapi import FastAPI
-    from fastapi.testclient import TestClient
-
-    from realm_sync_api.web_manager.routers.logs import log_buffer
-    from realm_sync_api.web_manager.web_manager_router import WebManagerRouter
-
     app = FastAPI()
     app.include_router(WebManagerRouter(prefix="/web"))
     app.include_router(logs_router)

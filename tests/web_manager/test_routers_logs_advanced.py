@@ -164,9 +164,6 @@ async def test_websocket_general_exception_logging():
 @pytest.mark.asyncio
 async def test_websocket_outer_exception():
     """Test WebSocket outer exception handling (line 156-157)."""
-
-    from realm_sync_api.web_manager.web_manager_router import WebManagerRouter
-
     app = FastAPI()
     app.include_router(WebManagerRouter(prefix="/web"))
     app.include_router(logs_router)

@@ -4,7 +4,7 @@ from unittest.mock import AsyncMock, MagicMock, patch
 
 import httpx
 import pytest
-from fastapi import Request
+from fastapi import HTTPException, Request
 
 from realm_sync_api.web_manager.api import (
     create_in_api,
@@ -55,8 +55,6 @@ async def test_fetch_from_api_error(mock_request):
         mock_client.return_value.__aenter__.return_value = mock_client_instance
         mock_client_instance.get.side_effect = httpx.HTTPError("Connection error")
 
-        from fastapi import HTTPException
-
         with pytest.raises(HTTPException) as exc_info:
             await fetch_from_api(mock_request, "/player/")
         assert exc_info.value.status_code == 500
@@ -85,8 +83,6 @@ async def test_get_from_api_error(mock_request):
         mock_client_instance = AsyncMock()
         mock_client.return_value.__aenter__.return_value = mock_client_instance
         mock_client_instance.get.side_effect = httpx.HTTPError("Connection error")
-
-        from fastapi import HTTPException
 
         with pytest.raises(HTTPException) as exc_info:
             await get_from_api(mock_request, "/player/1")
@@ -125,8 +121,6 @@ async def test_create_in_api_http_status_error(mock_request):
         mock_client.return_value.__aenter__.return_value = mock_client_instance
         mock_client_instance.post.side_effect = error
 
-        from fastapi import HTTPException
-
         with pytest.raises(HTTPException) as exc_info:
             await create_in_api(mock_request, "/player/", {"name": "Test"})
         assert exc_info.value.status_code == 500
@@ -139,8 +133,6 @@ async def test_create_in_api_http_error(mock_request):
         mock_client_instance = AsyncMock()
         mock_client.return_value.__aenter__.return_value = mock_client_instance
         mock_client_instance.post.side_effect = httpx.HTTPError("Connection error")
-
-        from fastapi import HTTPException
 
         with pytest.raises(HTTPException) as exc_info:
             await create_in_api(mock_request, "/player/", {"name": "Test"})
@@ -171,8 +163,6 @@ async def test_update_in_api_error(mock_request):
         mock_client.return_value.__aenter__.return_value = mock_client_instance
         mock_client_instance.put.side_effect = httpx.HTTPError("Connection error")
 
-        from fastapi import HTTPException
-
         with pytest.raises(HTTPException) as exc_info:
             await update_in_api(mock_request, "/player/1", {"name": "Updated"})
         assert exc_info.value.status_code == 500
@@ -200,8 +190,6 @@ async def test_delete_from_api_error(mock_request):
         mock_client_instance = AsyncMock()
         mock_client.return_value.__aenter__.return_value = mock_client_instance
         mock_client_instance.delete.side_effect = httpx.HTTPError("Connection error")
-
-        from fastapi import HTTPException
 
         with pytest.raises(HTTPException) as exc_info:
             await delete_from_api(mock_request, "/player/1")
