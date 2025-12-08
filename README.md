@@ -105,8 +105,7 @@ pytest tests/ --cov=realm_sync_api --cov-report=html
 
 The project uses several linting tools to maintain code quality:
 
-- **Ruff**: Fast Python linter with multiple rule sets (pycodestyle, pyflakes, isort, etc.)
-- **Black**: Code formatter
+- **Ruff**: Fast Python linter and formatter with multiple rule sets (pycodestyle, pyflakes, isort, etc.)
 - **MyPy**: Static type checker
 - **Custom Import Checker**: Checks for imports inside functions
 
@@ -115,9 +114,15 @@ The project uses several linting tools to maintain code quality:
 Run all linting checks:
 
 ```bash
-ruff check .
-black --check .
-mypy realm_sync_api
+rs-lint
+```
+
+Or run individual tools:
+
+```bash
+ruff check .          # Linting
+ruff format --check . # Formatting check
+mypy realm_sync_api   # Type checking
 ```
 
 ### Custom Import Checker

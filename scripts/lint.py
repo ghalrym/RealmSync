@@ -12,8 +12,8 @@ def main():
     script_dir = Path(__file__).parent
     project_root = script_dir.parent
 
-    # Run ruff
-    print("Running ruff...")
+    # Run ruff check (linting)
+    print("Running ruff check...")
     result = subprocess.run(
         [sys.executable, "-m", "ruff", "check", "."],
         cwd=project_root,
@@ -23,14 +23,14 @@ def main():
         print("\n[FAIL] Linting failed. Please fix the issues above.")
         sys.exit(1)
 
-    # Run black (check mode)
-    print("\nRunning black (check mode)...")
+    # Run ruff format (formatting check)
+    print("\nRunning ruff format (check mode)...")
     result = subprocess.run(
-        [sys.executable, "-m", "black", "--check", "."],
+        [sys.executable, "-m", "ruff", "format", "--check", "."],
         cwd=project_root,
     )
     if result.returncode != 0:
-        print("[FAIL] black check failed")
+        print("[FAIL] ruff format check failed")
         print("\n[FAIL] Linting failed. Please fix the issues above.")
         sys.exit(1)
 

@@ -40,7 +40,6 @@ dev = [
     "pytest>=7.4.0",
     "pytest-asyncio>=0.21.0",
     "pytest-cov>=4.1.0",
-    "black>=23.0.0",
     "ruff>=0.1.0",
     "mypy>=1.5.0",
 ]
@@ -66,27 +65,15 @@ realm_sync_api = [
     "web_manager/templates/*",
 ]
 
-[tool.black]
-line-length = 100
-target-version = ["py311"]
-include = '\.pyi?$'
-extend-exclude = '''
-/(
-  # directories
-  \.eggs
-  | \.git
-  | \.hg
-  | \.mypy_cache
-  | \.tox
-  | \.venv
-  | build
-  | dist
-)/
-'''
-
 [tool.ruff]
 line-length = 100
 target-version = "py311"
+
+[tool.ruff.format]
+quote-style = "double"
+indent-style = "space"
+skip-magic-trailing-comma = false
+line-ending = "auto"
 
 [tool.ruff.lint]
 select = [
@@ -99,7 +86,7 @@ select = [
     "UP", # pyupgrade
 ]
 ignore = [
-    "E501",  # line too long, handled by black
+    "E501",  # line too long, handled by ruff formatter
     "B008",  # do not perform function calls in argument defaults
     "B017",  # do not assert blind exception: `Exception` - common in tests
 ]
