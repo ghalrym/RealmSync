@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "realm-sync-api"
-version = "0.1.0"
+version = "0.1.1"
 description = "A FastAPI-based API framework for managing game data with Redis and PostgreSQL support"
 readme = "README.md"
 requires-python = ">=3.11"
