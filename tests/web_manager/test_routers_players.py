@@ -27,8 +27,7 @@ def client(app):
     return TestClient(app)
 
 
-@pytest.mark.asyncio
-async def test_list_players(app):
+def test_list_players(app):
     """Test list players endpoint."""
     with patch("realm_sync_api.web_manager.routers.players.fetch_from_api") as mock_fetch:
         mock_fetch.return_value = [{"id": "1", "name": "Player 1"}]
@@ -39,8 +38,7 @@ async def test_list_players(app):
         assert "text/html" in response.headers.get("content-type", "")
 
 
-@pytest.mark.asyncio
-async def test_create_player_form(app):
+def test_create_player_form(app):
     """Test create player form endpoint."""
     client = TestClient(app)
     response = client.get("/player/create")
@@ -48,8 +46,7 @@ async def test_create_player_form(app):
     assert "text/html" in response.headers.get("content-type", "")
 
 
-@pytest.mark.asyncio
-async def test_create_player_success(app):
+def test_create_player_success(app):
     """Test creating a player successfully."""
     with patch("realm_sync_api.web_manager.routers.players.create_in_api") as mock_create:
         mock_create.return_value = {"id": "1", "name": "New Player"}
@@ -66,14 +63,11 @@ async def test_create_player_success(app):
             },
             follow_redirects=False,
         )
-        # May fail due to template rendering, but we're testing the API call
-        assert response.status_code in [303, 500]
-        if response.status_code == 303:
-            mock_create.assert_called_once()
+        assert response.status_code == 303
+        mock_create.assert_called_once()
 
 
-@pytest.mark.asyncio
-async def test_create_player_invalid_json_location(app):
+def test_create_player_invalid_json_location(app):
     """Test creating a player with invalid JSON location."""
     with patch("realm_sync_api.web_manager.routers.players.create_in_api") as mock_create:
         mock_create.return_value = {"id": "1", "name": "New Player"}
@@ -90,16 +84,13 @@ async def test_create_player_invalid_json_location(app):
             },
             follow_redirects=False,
         )
-        # May fail due to template rendering, but we're testing the API call
-        assert response.status_code in [303, 500]
-        if response.status_code == 303:
-            # Should use default location format
-            call_args = mock_create.call_args[0]
-            assert call_args[2]["location"]["location"] == "invalid json"
+        assert response.status_code == 303
+        # Should use default location format
+        call_args = mock_create.call_args[0]
+        assert call_args[2]["location"]["location"] == "invalid json"
 
 
-@pytest.mark.asyncio
-async def test_view_player(app):
+def test_view_player(app):
     """Test view player endpoint."""
     with patch("realm_sync_api.web_manager.routers.players.get_from_api") as mock_get:
         mock_get.return_value = {"id": "1", "name": "Player 1"}
@@ -110,8 +101,7 @@ async def test_view_player(app):
         assert "text/html" in response.headers.get("content-type", "")
 
 
-@pytest.mark.asyncio
-async def test_edit_player_form(app):
+def test_edit_player_form(app):
     """Test edit player form endpoint."""
     with patch("realm_sync_api.web_manager.routers.players.get_from_api") as mock_get:
         mock_get.return_value = {"id": "1", "name": "Player 1"}
@@ -122,8 +112,7 @@ async def test_edit_player_form(app):
         assert "text/html" in response.headers.get("content-type", "")
 
 
-@pytest.mark.asyncio
-async def test_update_player_success(app):
+def test_update_player_success(app):
     """Test updating a player successfully."""
     with patch("realm_sync_api.web_manager.routers.players.update_in_api") as mock_update:
         mock_update.return_value = {"id": "1", "name": "Updated Player"}
@@ -139,14 +128,11 @@ async def test_update_player_success(app):
             },
             follow_redirects=False,
         )
-        # May fail due to template rendering, but we're testing the API call
-        assert response.status_code in [303, 500]
-        if response.status_code == 303:
-            mock_update.assert_called_once()
+        assert response.status_code == 303
+        mock_update.assert_called_once()
 
 
-@pytest.mark.asyncio
-async def test_update_player_invalid_json_location(app):
+def test_update_player_invalid_json_location(app):
     """Test updating a player with invalid JSON location."""
     with patch("realm_sync_api.web_manager.routers.players.update_in_api") as mock_update:
         mock_update.return_value = {"id": "1", "name": "Updated Player"}
@@ -162,22 +148,17 @@ async def test_update_player_invalid_json_location(app):
             },
             follow_redirects=False,
         )
-        # May fail due to template rendering, but we're testing the API call
-        assert response.status_code in [303, 500]
-        if response.status_code == 303:
-            call_args = mock_update.call_args[0]
-            assert call_args[2]["location"]["location"] == "invalid json"
+        assert response.status_code == 303
+        call_args = mock_update.call_args[0]
+        assert call_args[2]["location"]["location"] == "invalid json"
 
 
-@pytest.mark.asyncio
-async def test_delete_player(app):
+def test_delete_player(app):
     """Test deleting a player."""
     with patch("realm_sync_api.web_manager.routers.players.delete_from_api") as mock_delete:
         mock_delete.return_value = None
 
         client = TestClient(app)
         response = client.post("/player/delete/1", follow_redirects=False)
-        # May fail due to template rendering, but we're testing the API call
-        assert response.status_code in [303, 500]
-        if response.status_code == 303:
-            mock_delete.assert_called_once()
+        assert response.status_code == 303
+        mock_delete.assert_called_once()
