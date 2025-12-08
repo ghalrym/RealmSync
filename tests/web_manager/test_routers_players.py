@@ -117,7 +117,7 @@ async def test_edit_player_form(app):
         mock_get.return_value = {"id": "1", "name": "Player 1"}
 
         client = TestClient(app)
-        response = client.get("/player/1/edit")
+        response = client.get("/player/edit/1")
         assert response.status_code == 200
         assert "text/html" in response.headers.get("content-type", "")
 
@@ -130,7 +130,7 @@ async def test_update_player_success(app):
 
         client = TestClient(app)
         response = client.post(
-            "/player/1/edit",
+            "/player/edit/1",
             data={
                 "name": "Updated Player",
                 "server": "s1",
@@ -153,7 +153,7 @@ async def test_update_player_invalid_json_location(app):
 
         client = TestClient(app)
         response = client.post(
-            "/player/1/edit",
+            "/player/edit/1",
             data={
                 "name": "Updated Player",
                 "server": "s1",
@@ -176,7 +176,7 @@ async def test_delete_player(app):
         mock_delete.return_value = None
 
         client = TestClient(app)
-        response = client.post("/player/1/delete", follow_redirects=False)
+        response = client.post("/player/delete/1", follow_redirects=False)
         # May fail due to template rendering, but we're testing the API call
         assert response.status_code in [303, 500]
         if response.status_code == 303:

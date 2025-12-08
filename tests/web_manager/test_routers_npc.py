@@ -102,7 +102,7 @@ async def test_edit_npc_form(app):
         mock_get.return_value = {"id": "1", "name": "NPC 1", "faction": "A", "quests": []}
 
         client = TestClient(app)
-        response = client.get("/npc/1/edit")
+        response = client.get("/npc/edit/1")
         assert response.status_code == 200
 
 
@@ -114,7 +114,7 @@ async def test_update_npc(app):
 
         client = TestClient(app)
         response = client.post(
-            "/npc/1/edit",
+            "/npc/edit/1",
             data={"name": "Updated NPC", "faction": "B", "quests": ""},
             follow_redirects=False,
         )
@@ -136,7 +136,7 @@ async def test_update_npc_with_quests(app):
 
         client = TestClient(app)
         response = client.post(
-            "/npc/1/edit",
+            "/npc/edit/1",
             data={"name": "Updated NPC", "faction": "B", "quests": "q1"},
             follow_redirects=False,
         )
@@ -152,7 +152,7 @@ async def test_delete_npc(app):
         mock_delete.return_value = None
 
         client = TestClient(app)
-        response = client.post("/npc/1/delete", follow_redirects=False)
+        response = client.post("/npc/delete/1", follow_redirects=False)
         assert response.status_code in [303, 500]
         if response.status_code == 303:
             mock_delete.assert_called_once()

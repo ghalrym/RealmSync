@@ -28,21 +28,6 @@ async def list_items(request: Request):
     )
 
 
-@router.get("/{id}", response_class=HTMLResponse)
-async def view_item(request: Request, id: str):
-    """View a single item."""
-    item = await get_from_api(request, f"/item/{id}")
-    return templates.TemplateResponse(
-        "view.html",
-        {
-            "request": request,
-            "model_name": "Item",
-            "model_name_lower": "item",
-            "item": item,
-        },
-    )
-
-
 @router.get("/create", response_class=HTMLResponse)
 async def create_item_form(request: Request):
     """Show create item form."""
@@ -78,7 +63,7 @@ async def create_item(
     )
 
 
-@router.get("/{id}/edit", response_class=HTMLResponse)
+@router.get("/edit/{id}", response_class=HTMLResponse)
 async def edit_item_form(request: Request, id: str):
     """Show edit item form."""
     item = await get_from_api(request, f"/item/{id}")
@@ -98,7 +83,7 @@ async def edit_item_form(request: Request, id: str):
     )
 
 
-@router.post("/{id}/edit", response_class=RedirectResponse)
+@router.post("/edit/{id}", response_class=RedirectResponse)
 async def update_item(
     request: Request,
     id: str,
@@ -114,11 +99,26 @@ async def update_item(
     )
 
 
-@router.post("/{id}/delete", response_class=RedirectResponse)
+@router.post("/delete/{id}", response_class=RedirectResponse)
 async def delete_item(request: Request, id: str):
     """Delete an item."""
     await delete_from_api(request, f"/item/{id}")
     return RedirectResponse(
         url="/web/item",
         status_code=status.HTTP_303_SEE_OTHER,
+    )
+
+
+@router.get("/{id}", response_class=HTMLResponse)
+async def view_item(request: Request, id: str):
+    """View a single item."""
+    item = await get_from_api(request, f"/item/{id}")
+    return templates.TemplateResponse(
+        "view.html",
+        {
+            "request": request,
+            "model_name": "Item",
+            "model_name_lower": "item",
+            "item": item,
+        },
     )

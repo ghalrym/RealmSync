@@ -124,7 +124,7 @@ async def test_edit_quest_form(app):
         }
 
         client = TestClient(app)
-        response = client.get("/quest/1/edit")
+        response = client.get("/quest/edit/1")
         assert response.status_code == 200
 
 
@@ -141,7 +141,7 @@ async def test_update_quest(app):
 
         client = TestClient(app)
         response = client.post(
-            "/quest/1/edit",
+            "/quest/edit/1",
             data={"name": "Updated Quest", "description": "Updated Desc", "dependencies": ""},
             follow_redirects=False,
         )
@@ -163,7 +163,7 @@ async def test_update_quest_with_dependencies(app):
 
         client = TestClient(app)
         response = client.post(
-            "/quest/1/edit",
+            "/quest/edit/1",
             data={"name": "Updated Quest", "description": "Updated Desc", "dependencies": "q1"},
             follow_redirects=False,
         )
@@ -179,7 +179,7 @@ async def test_delete_quest(app):
         mock_delete.return_value = None
 
         client = TestClient(app)
-        response = client.post("/quest/1/delete", follow_redirects=False)
+        response = client.post("/quest/delete/1", follow_redirects=False)
         assert response.status_code in [303, 500]
         if response.status_code == 303:
             mock_delete.assert_called_once()

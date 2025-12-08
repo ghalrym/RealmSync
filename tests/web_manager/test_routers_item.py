@@ -84,7 +84,7 @@ async def test_edit_item_form(app):
         mock_get.return_value = {"id": "1", "name": "Item 1"}
 
         client = TestClient(app)
-        response = client.get("/item/1/edit")
+        response = client.get("/item/edit/1")
         assert response.status_code == 200
 
 
@@ -96,7 +96,7 @@ async def test_update_item(app):
 
         client = TestClient(app)
         response = client.post(
-            "/item/1/edit",
+            "/item/edit/1",
             data={"name": "Updated Item", "type": "armor"},
             follow_redirects=False,
         )
@@ -113,7 +113,7 @@ async def test_delete_item(app):
         mock_delete.return_value = None
 
         client = TestClient(app)
-        response = client.post("/item/1/delete", follow_redirects=False)
+        response = client.post("/item/delete/1", follow_redirects=False)
         # May fail due to template rendering, but we're testing the API call
         assert response.status_code in [303, 500]
         if response.status_code == 303:

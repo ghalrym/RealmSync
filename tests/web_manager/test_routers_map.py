@@ -80,7 +80,7 @@ async def test_edit_map_form(app):
         mock_get.return_value = {"id": "1", "name": "Map 1"}
 
         client = TestClient(app)
-        response = client.get("/map/1/edit")
+        response = client.get("/map/edit/1")
         assert response.status_code == 200
 
 
@@ -92,7 +92,7 @@ async def test_update_map(app):
 
         client = TestClient(app)
         response = client.post(
-            "/map/1/edit",
+            "/map/edit/1",
             data={"name": "Updated Map"},
             follow_redirects=False,
         )
@@ -108,7 +108,7 @@ async def test_delete_map(app):
         mock_delete.return_value = None
 
         client = TestClient(app)
-        response = client.post("/map/1/delete", follow_redirects=False)
+        response = client.post("/map/delete/1", follow_redirects=False)
         assert response.status_code in [303, 500]
         if response.status_code == 303:
             mock_delete.assert_called_once()
