@@ -198,7 +198,9 @@ def test_item_router_endpoints(client, mock_redis):
     mock_redis.exists.return_value = 1
 
     response = client.get("/item/1")
-    assert response.status_code == 200, f"Expected 200, got {response.status_code}. Response: {response.text}"
+    assert response.status_code == 200, (
+        f"Expected 200, got {response.status_code}. Response: {response.text}"
+    )
     assert response.json()["id"] == "1"
 
     # Test PUT /item/1

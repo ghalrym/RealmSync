@@ -112,4 +112,3 @@ async def test_delete_map(app):
         assert response.status_code in [303, 500]
         if response.status_code == 303:
             mock_delete.assert_called_once()
-

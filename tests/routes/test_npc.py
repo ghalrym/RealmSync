@@ -93,9 +93,7 @@ async def test_npc_retriever_list_with_npcs(mock_redis):
 
     # Mock scan to return keys in batches
     mock_redis.scan = AsyncMock(side_effect=[(1, ["npc:1"]), (0, ["npc:2"])])
-    mock_redis.get = AsyncMock(
-        side_effect=[npc1.model_dump_json(), npc2.model_dump_json()]
-    )
+    mock_redis.get = AsyncMock(side_effect=[npc1.model_dump_json(), npc2.model_dump_json()])
 
     retriever = NPCRetriever()
     result = await retriever.list(ListRequestArgs())
@@ -241,4 +239,3 @@ def test_npc_router_endpoints(client, mock_redis):
     response = client.get("/npc/")
     assert response.status_code == 200
     assert isinstance(response.json(), list)
-

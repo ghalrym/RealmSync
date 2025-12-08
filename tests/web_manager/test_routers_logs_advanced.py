@@ -196,7 +196,7 @@ async def test_websocket_close_exception():
     # The exception in close() (lines 163-164) is defensive programming
     # and is tested through normal WebSocket disconnection
     # The finally block ensures cleanup even if close() raises
-    with client.websocket_connect("/logs/ws") as websocket:
+    with client.websocket_connect("/logs/ws"):
         pass  # Normal disconnection tests the finally block
 
 

@@ -93,9 +93,7 @@ async def test_quest_retriever_list_with_quests(mock_redis):
 
     # Mock scan to return keys in batches
     mock_redis.scan = AsyncMock(side_effect=[(1, ["quest:1"]), (0, ["quest:2"])])
-    mock_redis.get = AsyncMock(
-        side_effect=[quest1.model_dump_json(), quest2.model_dump_json()]
-    )
+    mock_redis.get = AsyncMock(side_effect=[quest1.model_dump_json(), quest2.model_dump_json()])
 
     retriever = QuestRetriever()
     result = await retriever.list(ListRequestArgs())
@@ -246,4 +244,3 @@ def test_quest_router_endpoints(client, mock_redis):
     response = client.get("/quest/")
     assert response.status_code == 200
     assert isinstance(response.json(), list)
-

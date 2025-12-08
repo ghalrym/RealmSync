@@ -2,7 +2,6 @@
 
 from unittest.mock import MagicMock, patch
 
-import pytest
 from fastapi.testclient import TestClient
 
 from realm_sync_api.dependencies.hooks import RealmSyncHook, get_hooks
@@ -153,4 +152,3 @@ def test_realm_sync_api_delete_method():
     response = client.delete("/test")
     assert response.status_code == 200
     assert response.json() == {"message": "test"}
-
