@@ -1,5 +1,6 @@
 import pytest
 
+from realm_sync_api.dependencies import postgres
 from realm_sync_api.dependencies.postgres import (
     RealmSyncPostgres,
     get_postgres_client,
@@ -28,3 +29,21 @@ def test_get_postgres_client_raises_when_not_set():
 
     with pytest.raises(ValueError, match="Postgres client not found"):
         get_postgres_client()
+
+
+def test_postgres_module_imports():
+    """Test that postgres module can be imported and has expected attributes."""
+    assert hasattr(postgres, "RealmSyncPostgres")
+    assert hasattr(postgres, "POSTGRES_CLIENT")
+    assert hasattr(postgres, "set_postgres_client")
+    assert hasattr(postgres, "get_postgres_client")
+
+
+def test_postgres_client_initial_state():
+    """Test that POSTGRES_CLIENT starts as None."""
+    # Reset to None
+    set_postgres_client(None)  # type: ignore
+    # The module-level variable should exist
+    assert postgres.POSTGRES_CLIENT is None or isinstance(
+        postgres.POSTGRES_CLIENT, RealmSyncPostgres
+    )

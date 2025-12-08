@@ -77,11 +77,7 @@ async def create_quest(
     dependencies: str = Form(""),
 ):
     """Create a new quest."""
-    deps_list = (
-        [d.strip() for d in dependencies.split(",") if d.strip()]
-        if dependencies
-        else []
-    )
+    deps_list = [d.strip() for d in dependencies.split(",") if d.strip()] if dependencies else []
     quest_data = {
         "id": id,
         "name": name,
@@ -127,11 +123,7 @@ async def update_quest(
     dependencies: str = Form(""),
 ):
     """Update a quest."""
-    deps_list = (
-        [d.strip() for d in dependencies.split(",") if d.strip()]
-        if dependencies
-        else []
-    )
+    deps_list = [d.strip() for d in dependencies.split(",") if d.strip()] if dependencies else []
     quest_data = {
         "id": id,
         "name": name,
@@ -139,9 +131,7 @@ async def update_quest(
         "dependencies": deps_list,
     }
     await update_in_api(request, f"/quest/{id}", quest_data)
-    return RedirectResponse(
-        url=f"/web/quest/{id}", status_code=status.HTTP_303_SEE_OTHER
-    )
+    return RedirectResponse(url=f"/web/quest/{id}", status_code=status.HTTP_303_SEE_OTHER)
 
 
 @router.post("/{id}/delete", response_class=RedirectResponse)

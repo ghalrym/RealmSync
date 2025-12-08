@@ -1,11 +1,15 @@
 from collections import defaultdict
-from typing import Any
-
-from realm_sync_api.hooks import RealmSyncHook
-
-RealmSyncApiHook = Any  # Protocol type for hook functions
+from collections.abc import Callable
+from enum import Enum
 
 
+class RealmSyncHook(Enum):
+    PLAYER_CREATED = "player_created"
+    PLAYER_UPDATED = "player_updated"
+    PLAYER_DELETED = "player_deleted"
+
+
+RealmSyncApiHook = Callable[..., None]
 HOOKS: dict[RealmSyncHook, list[RealmSyncApiHook]] = defaultdict(list)
 
 

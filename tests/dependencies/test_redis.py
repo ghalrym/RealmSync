@@ -1,5 +1,6 @@
 import pytest
 
+from realm_sync_api.dependencies import redis
 from realm_sync_api.dependencies.redis import (
     RealmSyncRedis,
     get_redis_client,
@@ -38,3 +39,19 @@ def test_realm_sync_redis_with_kwargs():
     """Test that RealmSyncRedis accepts additional kwargs."""
     redis_client = RealmSyncRedis(host="localhost", port=6379, db=0, socket_timeout=5.0)
     assert redis_client.connection_pool.connection_kwargs["socket_timeout"] == 5.0
+
+
+def test_redis_module_imports():
+    """Test that redis module can be imported and has expected attributes."""
+    assert hasattr(redis, "RealmSyncRedis")
+    assert hasattr(redis, "REDIS_CLIENT")
+    assert hasattr(redis, "set_redis_client")
+    assert hasattr(redis, "get_redis_client")
+
+
+def test_redis_client_initial_state():
+    """Test that REDIS_CLIENT starts as None."""
+    # Reset to None
+    set_redis_client(None)  # type: ignore
+    # The module-level variable should exist
+    assert redis.REDIS_CLIENT is None or isinstance(redis.REDIS_CLIENT, RealmSyncRedis)

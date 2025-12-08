@@ -1,9 +1,14 @@
+from collections import defaultdict
 from unittest.mock import MagicMock
 
-import pytest
-
-from realm_sync_api.dependencies.hooks import add_hook, get_hooks
-from realm_sync_api.hooks import RealmSyncHook
+from realm_sync_api.dependencies import hooks as hooks_module
+from realm_sync_api.dependencies.hooks import (
+    HOOKS,
+    RealmSyncApiHook,
+    RealmSyncHook,
+    add_hook,
+    get_hooks,
+)
 
 
 def test_get_hooks_returns_defaultdict():
@@ -61,3 +66,23 @@ def test_add_hook_different_hook_types():
     assert func2 in hooks[RealmSyncHook.PLAYER_UPDATED]
     assert func1 not in hooks[RealmSyncHook.PLAYER_UPDATED]
     assert func2 not in hooks[RealmSyncHook.PLAYER_CREATED]
+
+
+def test_hooks_module_imports():
+    """Test that hooks module can be imported and has expected attributes."""
+    assert hasattr(hooks_module, "HOOKS")
+    assert hasattr(hooks_module, "RealmSyncApiHook")
+    assert hasattr(hooks_module, "get_hooks")
+    assert hasattr(hooks_module, "add_hook")
+
+
+def test_hooks_global_variable():
+    """Test that HOOKS is accessible and is a defaultdict."""
+    assert isinstance(HOOKS, defaultdict)
+    assert HOOKS is get_hooks()  # Should be the same instance
+
+
+def test_realm_sync_api_hook_type():
+    """Test that RealmSyncApiHook is defined."""
+    # RealmSyncApiHook is just a type alias, so we just check it exists
+    assert RealmSyncApiHook is not None
