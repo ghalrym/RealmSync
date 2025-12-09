@@ -8,8 +8,7 @@ from fastapi import HTTPException, Request, status
 from jose import jwt
 
 from realm_sync_api.dependencies.auth import RealmSyncAuth
-from realm_sync_api.dependencies.postgres import set_postgres_client
-from tests.dependencies.test_postgres import MockRealmSyncPostgres
+from realm_sync_api.dependencies.postgres import MockRealmSyncPostgres, set_postgres_client
 
 
 def test_realm_sync_auth_init_with_defaults():
@@ -496,3 +495,4 @@ async def test_get_current_user():
     assert user["user_id"] == "user123"
     assert user["payload"] is not None
     assert user["payload"]["sub"] == "user123"
+
