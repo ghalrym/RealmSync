@@ -1,24 +1,61 @@
-from collections.abc import Callable
+import logging
+from collections.abc import Awaitable, Callable
 from typing import Any, Protocol
 
 import fastapi_swagger_dark as fsd
-from fastapi import APIRouter, FastAPI
+from fastapi import APIRouter, FastAPI, HTTPException, Request
+from starlette.middleware.base import BaseHTTPMiddleware
+from starlette.responses import JSONResponse, Response
 
+from realm_sync_api.dependencies.auth import RealmSyncAuth
 from realm_sync_api.dependencies.hooks import RealmSyncHook, add_hook, get_hooks
 from realm_sync_api.dependencies.postgres import RealmSyncPostgres, set_postgres_client
 from realm_sync_api.dependencies.redis import RealmSyncRedis, set_redis_client
 from realm_sync_api.dependencies.web_manager import WebManager
 from realm_sync_api.routes import router
 
+logger = logging.getLogger(__name__)
+
 
 class RealmSyncApiHook(Protocol):
     def __call__(self, *args: Any, **kwargs: Any) -> None: ...
+
+
+class AuthMiddleware(BaseHTTPMiddleware):
+    """Middleware to validate sessions before API requests."""
+
+    def __init__(self, app: FastAPI, auth: RealmSyncAuth) -> None:
+        super().__init__(app)
+        self.auth = auth
+
+    async def dispatch(
+        self, request: Request, call_next: Callable[[Request], Awaitable[Response]]
+    ) -> Response:
+        # Skip auth for docs and openapi routes
+        path = request.url.path.lower()
+        skip_auth = (
+            path.startswith("/docs")
+            or path.startswith("/openapi.json")
+            or path.startswith("/redoc")
+        )
+        if not skip_auth:
+            try:
+                valid = await self.auth.validate_session(request)
+                if not valid:
+                    return JSONResponse(status_code=401, content={"detail": "Unauthorized"})
+            except HTTPException as e:
+                return JSONResponse(status_code=e.status_code, content={"detail": e.detail})
+            except Exception:
+                logger.exception("Unexpected error during session validation")
+                return JSONResponse(status_code=500, content={"detail": "Internal Server Error"})
+        return await call_next(request)
 
 
 class RealmSyncApi(FastAPI):
     def __init__(
         self,
         web_manager: WebManager | None = None,
+        auth: RealmSyncAuth | None = None,
         title: str = "RealmSync API",
         redis_client: RealmSyncRedis | None = None,
         postgres_client: RealmSyncPostgres | None = None,
@@ -35,6 +72,10 @@ class RealmSyncApi(FastAPI):
         self.include_router(router)
         if web_manager:
             self.include_router(web_manager.create_router())
+
+        # Add auth middleware (always add, with default auth if not provided)
+        auth_instance = auth if auth else RealmSyncAuth()
+        self.add_middleware(AuthMiddleware, auth=auth_instance)
 
         # Install dark mode Swagger UI
         self._add_dark_mode_to_swagger()
