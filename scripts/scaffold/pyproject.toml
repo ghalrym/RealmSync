@@ -1,0 +1,24 @@
+[build-system]
+requires = ["setuptools>=61.0", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "{PROJECT_NAME}"
+version = "0.1.0"
+description = "A RealmSync API project"
+requires-python = ">=3.11"
+dependencies = [
+    "realm-sync-api",
+    "python-dotenv",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=7.4.0",
+    "pytest-asyncio>=0.21.0",
+    "ruff>=0.1.0",
+]
+
+[tool.setuptools]
+packages = ["{PACKAGE_NAME}"]
+
