@@ -6,7 +6,7 @@ from fastapi.testclient import TestClient
 
 from realm_sync_api.dependencies.hooks import RealmSyncHook, get_hooks
 from realm_sync_api.dependencies.postgres import RealmSyncPostgres
-from realm_sync_api.dependencies.redis import RealmSyncRedis
+from realm_sync_api.dependencies.redis import RealmSyncRedis, get_redis_client
 from realm_sync_api.models import Location, Player
 from realm_sync_api.realm_sync_api import RealmSyncApi
 
@@ -21,7 +21,7 @@ def test_realm_sync_api_init_without_web_manager():
 
 def test_realm_sync_api_init_with_web_manager():
     """Test RealmSyncApi initialization with web manager prefix."""
-    app = RealmSyncApi(web_manager_perfix="/admin")
+    app = RealmSyncApi(web_manager_prefix="/admin")
     assert app.title == "RealmSync API"
     # Check that docs_url is None (line 26)
     assert app.docs_url is None
@@ -60,21 +60,22 @@ def test_realm_sync_api_hook_decorator():
 
 
 def test_realm_sync_api_set_redis_client():
-    """Test setting Redis client."""
-    app = RealmSyncApi()
+    """Test setting Redis client via constructor."""
     redis_client = MagicMock(spec=RealmSyncRedis)
-    app.set_redis_client(redis_client)
-    # The method should not raise an exception
-    assert True
+    app = RealmSyncApi(redis_client=redis_client)
+    # Verify the client was actually registered by retrieving it
+    retrieved_client = get_redis_client()
+    assert retrieved_client is redis_client
+    assert app is not None
 
 
 def test_realm_sync_api_set_postgres_client():
-    """Test setting PostgreSQL client."""
-    app = RealmSyncApi()
+    """Test setting PostgreSQL client via constructor."""
     postgres_client = MagicMock(spec=RealmSyncPostgres)
-    app.set_postgres_client(postgres_client)
-    # The method should not raise an exception
+    app = RealmSyncApi(postgres_client=postgres_client)
+    # The client should be set without raising an exception
     assert True
+    assert app is not None
 
 
 def test_realm_sync_api_call_hooks():

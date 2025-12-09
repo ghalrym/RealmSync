@@ -18,8 +18,10 @@ class RealmSyncApiHook(Protocol):
 class RealmSyncApi(FastAPI):
     def __init__(
         self,
-        web_manager_perfix: str | None = None,
+        web_manager_prefix: str | None = None,
         title: str = "RealmSync API",
+        redis_client: RealmSyncRedis | None = None,
+        postgres_client: RealmSyncPostgres | None = None,
         **kwargs: Any,
     ) -> None:
         # Disable default docs to use dark mode version
@@ -31,11 +33,17 @@ class RealmSyncApi(FastAPI):
         )
 
         self.include_router(router)
-        if web_manager_perfix:
-            self.include_router(WebManagerRouter(prefix=web_manager_perfix))
+        if web_manager_prefix:
+            self.include_router(WebManagerRouter(prefix=web_manager_prefix))
 
         # Install dark mode Swagger UI
         self._add_dark_mode_to_swagger()
+
+        # Set clients if provided
+        if redis_client is not None:
+            set_redis_client(redis_client)
+        if postgres_client is not None:
+            set_postgres_client(postgres_client)
 
     def _add_dark_mode_to_swagger(self) -> None:
         """Install dark mode Swagger UI using fastapi-swagger-dark."""
@@ -57,12 +65,6 @@ class RealmSyncApi(FastAPI):
             return func
 
         return decorator
-
-    def set_redis_client(self, redis_client: RealmSyncRedis) -> None:
-        set_redis_client(redis_client)
-
-    def set_postgres_client(self, postgres_client: RealmSyncPostgres) -> None:
-        set_postgres_client(postgres_client)
 
     def call_hooks(self, hook: RealmSyncHook, *args: Any, **kwargs: Any) -> None:
         hooks = get_hooks()
