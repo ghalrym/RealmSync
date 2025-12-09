@@ -10,7 +10,8 @@ from realm_sync_api.web_manager.api import (
     get_from_api,
     update_in_api,
 )
-from realm_sync_api.web_manager.routers.tempate import templates
+from realm_sync_api.web_manager.routers.auth_dependency import check_auth
+from realm_sync_api.web_manager.routers.template import templates
 
 router = APIRouter(prefix="/player", tags=["player"])
 
@@ -18,6 +19,9 @@ router = APIRouter(prefix="/player", tags=["player"])
 @router.get("/", response_class=HTMLResponse)
 async def list_players(request: Request):
     """List all players."""
+    redirect = await check_auth(request)
+    if redirect:
+        return redirect
     players = await fetch_from_api(request, "/player/")
     return templates.TemplateResponse(
         "list.html",
@@ -33,6 +37,9 @@ async def list_players(request: Request):
 @router.get("/create", response_class=HTMLResponse)
 async def create_player_form(request: Request):
     """Show create player form."""
+    redirect = await check_auth(request)
+    if redirect:
+        return redirect
     return templates.TemplateResponse(
         "form.html",
         {
@@ -66,6 +73,9 @@ async def create_player(
     location: str = Form(...),
 ):
     """Create a new player."""
+    redirect = await check_auth(request)
+    if redirect:
+        return redirect
     try:
         location_data = json.loads(location)
     except json.JSONDecodeError:
@@ -89,6 +99,9 @@ async def create_player(
 @router.get("/edit/{id}", response_class=HTMLResponse)
 async def edit_player_form(request: Request, id: str):
     """Show edit player form."""
+    redirect = await check_auth(request)
+    if redirect:
+        return redirect
     player = await get_from_api(request, f"/player/{id}")
     return templates.TemplateResponse(
         "form.html",
@@ -123,6 +136,9 @@ async def update_player(
     location: str = Form(...),
 ):
     """Update a player."""
+    redirect = await check_auth(request)
+    if redirect:
+        return redirect
     try:
         location_data = json.loads(location)
     except json.JSONDecodeError:
@@ -146,6 +162,9 @@ async def update_player(
 @router.post("/delete/{id}", response_class=RedirectResponse)
 async def delete_player(request: Request, id: str):
     """Delete a player."""
+    redirect = await check_auth(request)
+    if redirect:
+        return redirect
     await delete_from_api(request, f"/player/{id}")
     web_prefix = templates.env.globals.get("web_prefix", "/web")
     return RedirectResponse(
@@ -157,6 +176,9 @@ async def delete_player(request: Request, id: str):
 @router.get("/{id}", response_class=HTMLResponse)
 async def view_player(request: Request, id: str):
     """View a single player."""
+    redirect = await check_auth(request)
+    if redirect:
+        return redirect
     player = await get_from_api(request, f"/player/{id}")
     return templates.TemplateResponse(
         "view.html",

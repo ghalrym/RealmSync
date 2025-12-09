@@ -1,12 +1,25 @@
+from typing import Any
+
 import pytest
 
 from realm_sync_api.dependencies import postgres
 from realm_sync_api.dependencies.postgres import (
-    MockRealmSyncPostgres,
     RealmSyncPostgres,
     get_postgres_client,
     set_postgres_client,
 )
+
+
+class MockRealmSyncPostgres:
+    """Concrete implementation of RealmSyncPostgres for testing."""
+
+    async def fetch_one(self, query: str, *args: Any) -> dict[str, Any] | None:
+        """Fetch a single row from the database."""
+        return None
+
+    async def execute(self, query: str, *args: Any) -> None:
+        """Execute a query without returning results."""
+        pass
 
 
 def test_realm_sync_postgres_is_protocol():

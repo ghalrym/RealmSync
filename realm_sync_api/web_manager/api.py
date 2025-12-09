@@ -9,13 +9,24 @@ def get_base_url(request: Request) -> str:
     return f"{request.url.scheme}://{request.url.netloc}"
 
 
+def get_auth_headers(request: Request) -> dict[str, str]:
+    """Get Authorization header from cookie if available."""
+    headers = {}
+    # Try to get token from cookie
+    token = request.cookies.get("access_token")
+    if token:
+        headers["Authorization"] = f"Bearer {token}"
+    return headers
+
+
 async def fetch_from_api(request: Request, endpoint: str) -> Any:
     """Helper function to fetch data from the API."""
     base_url = get_base_url(request)
+    headers = get_auth_headers(request)
     async with httpx.AsyncClient() as client:
         try:
             # Use GET request - body is optional and will default to empty ListRequestArgs
-            response = await client.get(f"{base_url}{endpoint}")
+            response = await client.get(f"{base_url}{endpoint}", headers=headers)
             response.raise_for_status()
             return response.json()
         except httpx.HTTPError as e:
@@ -25,9 +36,10 @@ async def fetch_from_api(request: Request, endpoint: str) -> Any:
 async def get_from_api(request: Request, endpoint: str) -> Any:
     """Helper function to get a single item from the API."""
     base_url = get_base_url(request)
+    headers = get_auth_headers(request)
     async with httpx.AsyncClient() as client:
         try:
-            response = await client.get(f"{base_url}{endpoint}")
+            response = await client.get(f"{base_url}{endpoint}", headers=headers)
             response.raise_for_status()
             return response.json()
         except httpx.HTTPError as e:
@@ -37,9 +49,10 @@ async def get_from_api(request: Request, endpoint: str) -> Any:
 async def create_in_api(request: Request, endpoint: str, data: dict) -> Any:
     """Helper function to create an item via the API."""
     base_url = get_base_url(request)
+    headers = get_auth_headers(request)
     async with httpx.AsyncClient(follow_redirects=True) as client:
         try:
-            response = await client.post(f"{base_url}{endpoint}", json=data)
+            response = await client.post(f"{base_url}{endpoint}", json=data, headers=headers)
             response.raise_for_status()
             return response.json()
         except httpx.HTTPStatusError as e:
@@ -54,9 +67,10 @@ async def create_in_api(request: Request, endpoint: str, data: dict) -> Any:
 async def update_in_api(request: Request, endpoint: str, data: dict) -> Any:
     """Helper function to update an item via the API."""
     base_url = get_base_url(request)
+    headers = get_auth_headers(request)
     async with httpx.AsyncClient() as client:
         try:
-            response = await client.put(f"{base_url}{endpoint}", json=data)
+            response = await client.put(f"{base_url}{endpoint}", json=data, headers=headers)
             response.raise_for_status()
             return response.json()
         except httpx.HTTPError as e:
@@ -66,9 +80,10 @@ async def update_in_api(request: Request, endpoint: str, data: dict) -> Any:
 async def delete_from_api(request: Request, endpoint: str) -> None:
     """Helper function to delete an item via the API."""
     base_url = get_base_url(request)
+    headers = get_auth_headers(request)
     async with httpx.AsyncClient() as client:
         try:
-            response = await client.delete(f"{base_url}{endpoint}")
+            response = await client.delete(f"{base_url}{endpoint}", headers=headers)
             response.raise_for_status()
         except httpx.HTTPError as e:
             raise HTTPException(status_code=500, detail=f"API Error: {str(e)}") from e

@@ -24,19 +24,23 @@ class RealmSyncApiHook(Protocol):
 class AuthMiddleware(BaseHTTPMiddleware):
     """Middleware to validate sessions before API requests."""
 
-    def __init__(self, app: FastAPI, auth: RealmSyncAuth) -> None:
+    def __init__(
+        self, app: FastAPI, auth: RealmSyncAuth, web_manager_prefix: str | None = None
+    ) -> None:
         super().__init__(app)
         self.auth = auth
+        self.web_manager_prefix = web_manager_prefix
 
     async def dispatch(
         self, request: Request, call_next: Callable[[Request], Awaitable[Response]]
     ) -> Response:
-        # Skip auth for docs and openapi routes
+        # Skip auth for docs, openapi, and web manager routes
         path = request.url.path.lower()
         skip_auth = (
             path.startswith("/docs")
             or path.startswith("/openapi.json")
             or path.startswith("/redoc")
+            or (self.web_manager_prefix and path.startswith(self.web_manager_prefix.lower()))
         )
         if not skip_auth:
             try:
@@ -70,12 +74,15 @@ class RealmSyncApi(FastAPI):
         )
 
         self.include_router(router)
+        web_manager_prefix = None
         if web_manager:
+            web_manager_prefix = web_manager.prefix
             self.include_router(web_manager.create_router())
 
         # Add auth middleware only if auth is explicitly provided
+        # Skip web manager routes as they handle their own authentication
         if auth is not None:
-            self.add_middleware(AuthMiddleware, auth=auth)
+            self.add_middleware(AuthMiddleware, auth=auth, web_manager_prefix=web_manager_prefix)
 
         # Install dark mode Swagger UI
         self._add_dark_mode_to_swagger()

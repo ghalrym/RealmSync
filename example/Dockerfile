@@ -5,17 +5,9 @@ WORKDIR /app
 # Copy the entire project (build context is parent directory)
 COPY . /app/
 
-# Install dependencies
+# Install dependencies from pyproject.toml
 RUN pip install --no-cache-dir --upgrade pip && \
-    pip install --no-cache-dir \
-    fastapi \
-    uvicorn[standard] \
-    redis \
-    psycopg2-binary \
-    httpx \
-    jinja2 \
-    python-multipart \
-    fastapi-swagger-dark
+    pip install --no-cache-dir -e .
 
 # Expose the port
 EXPOSE 8000

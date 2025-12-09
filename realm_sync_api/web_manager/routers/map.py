@@ -8,7 +8,7 @@ from realm_sync_api.web_manager.api import (
     get_from_api,
     update_in_api,
 )
-from realm_sync_api.web_manager.routers.tempate import templates
+from realm_sync_api.web_manager.routers.template import templates
 
 router = APIRouter(prefix="/map", tags=["map"])
 

@@ -3,7 +3,6 @@ import secrets
 from datetime import UTC, datetime, timedelta
 from typing import Any, cast
 
-from dateutil.parser import isoparse
 from fastapi import HTTPException, Request, status
 from fastapi.security import HTTPBearer
 from jose import JWTError, jwt
@@ -21,6 +20,7 @@ ALGORITHM = "HS256"
 # Default secret key - should be overridden in production
 DEFAULT_SECRET_KEY = secrets.token_urlsafe(32)
 ACCESS_TOKEN_EXPIRE_MINUTES = 30
+
 
 
 class RealmSyncAuth:
@@ -130,6 +130,7 @@ class RealmSyncAuth:
     async def validate_session(self, request: Request) -> bool:
         """
         Validate the session for the given request using JWT token.
+        Checks Authorization header first, then cookie if header is not present.
 
         Args:
             request: The FastAPI request object
@@ -140,7 +141,8 @@ class RealmSyncAuth:
         Raises:
             HTTPException: If the session is invalid
         """
-        token = self._get_token_from_request(request)
+        # Try to get token from Authorization header first, then from cookie
+        token = self._get_token_from_request(request) or self._get_token_from_cookie(request)
         if not token:
             raise HTTPException(
                 status_code=status.HTTP_401_UNAUTHORIZED,
@@ -171,12 +173,17 @@ class RealmSyncAuth:
                         # Timezone-aware datetime - convert to UTC
                         expires_at_dt = expires_at.astimezone(UTC)
                 elif isinstance(expires_at, str):
-                    # Parse string to datetime using isoparse for robustness
-                    expires_at_dt = isoparse(expires_at)
-                    # Ensure timezone-aware (isoparse should handle this, but normalize to UTC)
-                    if expires_at_dt.tzinfo is None:
+                    # Parse string to datetime using fromisoformat (Python 3.7+)
+                    try:
+                        expires_at_dt = datetime.fromisoformat(expires_at.replace("Z", "+00:00"))
+                    except (ValueError, AttributeError):
+                        # Fallback: try parsing as-is, or use current time if parsing fails
+                        logger.warning(f"Failed to parse expires_at: {expires_at}")
+                        expires_at_dt = None
+                    # Ensure timezone-aware (normalize to UTC)
+                    if expires_at_dt and expires_at_dt.tzinfo is None:
                         expires_at_dt = expires_at_dt.replace(tzinfo=UTC)
-                    else:
+                    elif expires_at_dt:
                         expires_at_dt = expires_at_dt.astimezone(UTC)
                 else:
                     # Unexpected type - skip expiration check
@@ -259,3 +266,128 @@ class RealmSyncAuth:
             "user_id": request.state.user_id,
             "payload": request.state.user_payload,
         }
+
+    def _get_token_from_cookie(self, request: Request) -> str | None:
+        """Extract JWT token from cookie."""
+        return request.cookies.get("access_token")
+
+    async def signup(self, username: str, email: str, password: str) -> dict[str, Any]:
+        """
+        Create a new user account.
+
+        Args:
+            username: The username for the new account
+            email: The email address for the new account
+            password: The plain text password
+
+        Returns:
+            Dictionary containing user_id and username
+
+        Raises:
+            HTTPException: If the user already exists
+        """
+        postgres_client = get_postgres_client()
+        try:
+            # Check if user already exists
+            existing_user = await postgres_client.fetch_one(
+                "SELECT id FROM users WHERE username = $1 OR email = $2", username, email
+            )
+            if existing_user:
+                raise HTTPException(
+                    status_code=status.HTTP_400_BAD_REQUEST,
+                    detail="Username or email already exists",
+                )
+
+            # Generate user ID
+            user_id = secrets.token_urlsafe(16)
+            hashed_password = self.get_password_hash(password)
+            created_at = datetime.now(UTC)
+
+            # Create user
+            await postgres_client.execute(
+                "INSERT INTO users (id, username, email, hashed_password, is_active, created_at) "
+                "VALUES ($1, $2, $3, $4, $5, $6)",
+                user_id,
+                username,
+                email,
+                hashed_password,
+                True,
+                created_at,
+            )
+
+            return {"user_id": user_id, "username": username, "email": email}
+        except AttributeError as e:
+            raise HTTPException(
+                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                detail="Database client not properly configured",
+            ) from e
+        except HTTPException:
+            raise
+        except Exception as e:
+            logger.exception("Error during user signup")
+            raise HTTPException(
+                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                detail="An internal error occurred while creating the user",
+            ) from e
+
+    async def login(self, username: str, password: str) -> str:
+        """
+        Authenticate a user and return a JWT token.
+
+        Args:
+            username: The username or email
+            password: The plain text password
+
+        Returns:
+            JWT token string
+
+        Raises:
+            HTTPException: If authentication fails
+        """
+        postgres_client = get_postgres_client()
+        try:
+            # Find user by username or email
+            user = await postgres_client.fetch_one(
+                "SELECT id, username, email, hashed_password, is_active FROM users "
+                "WHERE username = $1 OR email = $1",
+                username,
+            )
+
+            if not user:
+                raise HTTPException(
+                    status_code=status.HTTP_401_UNAUTHORIZED,
+                    detail="Incorrect username or password",
+                )
+
+            if not user.get("is_active"):
+                raise HTTPException(
+                    status_code=status.HTTP_401_UNAUTHORIZED,
+                    detail="User account is inactive",
+                )
+
+            # Verify password
+            hashed_password = user.get("hashed_password")
+            if not hashed_password or not self.verify_password(password, hashed_password):
+                raise HTTPException(
+                    status_code=status.HTTP_401_UNAUTHORIZED,
+                    detail="Incorrect username or password",
+                )
+
+            # Create token
+            user_id = user.get("id")
+            token = await self.create_token(user_id)
+
+            return token
+        except HTTPException:
+            raise
+        except AttributeError as e:
+            raise HTTPException(
+                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                detail="Database client not properly configured",
+            ) from e
+        except Exception as e:
+            logger.exception("Error during user login")
+            raise HTTPException(
+                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                detail=f"Error during authentication: {str(e)}",
+            ) from e
