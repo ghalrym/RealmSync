@@ -7,8 +7,8 @@ from fastapi import APIRouter, FastAPI
 from realm_sync_api.dependencies.hooks import RealmSyncHook, add_hook, get_hooks
 from realm_sync_api.dependencies.postgres import RealmSyncPostgres, set_postgres_client
 from realm_sync_api.dependencies.redis import RealmSyncRedis, set_redis_client
+from realm_sync_api.dependencies.web_manager import WebManager
 from realm_sync_api.routes import router
-from realm_sync_api.web_manager.web_manager_router import WebManagerRouter
 
 
 class RealmSyncApiHook(Protocol):
@@ -18,7 +18,7 @@ class RealmSyncApiHook(Protocol):
 class RealmSyncApi(FastAPI):
     def __init__(
         self,
-        web_manager_prefix: str | None = None,
+        web_manager: WebManager | None = None,
         title: str = "RealmSync API",
         redis_client: RealmSyncRedis | None = None,
         postgres_client: RealmSyncPostgres | None = None,
@@ -33,8 +33,8 @@ class RealmSyncApi(FastAPI):
         )
 
         self.include_router(router)
-        if web_manager_prefix:
-            self.include_router(WebManagerRouter(prefix=web_manager_prefix))
+        if web_manager:
+            self.include_router(web_manager.create_router())
 
         # Install dark mode Swagger UI
         self._add_dark_mode_to_swagger()

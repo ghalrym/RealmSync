@@ -7,6 +7,7 @@ from fastapi.testclient import TestClient
 from realm_sync_api.dependencies.hooks import RealmSyncHook, get_hooks
 from realm_sync_api.dependencies.postgres import RealmSyncPostgres
 from realm_sync_api.dependencies.redis import RealmSyncRedis, get_redis_client
+from realm_sync_api.dependencies.web_manager import WebManager
 from realm_sync_api.models import Location, Player
 from realm_sync_api.realm_sync_api import RealmSyncApi
 
@@ -20,8 +21,9 @@ def test_realm_sync_api_init_without_web_manager():
 
 
 def test_realm_sync_api_init_with_web_manager():
-    """Test RealmSyncApi initialization with web manager prefix."""
-    app = RealmSyncApi(web_manager_prefix="/admin")
+    """Test RealmSyncApi initialization with web manager."""
+    web_manager = WebManager(prefix="/admin")
+    app = RealmSyncApi(web_manager=web_manager)
     assert app.title == "RealmSync API"
     # Check that docs_url is None (line 26)
     assert app.docs_url is None
