@@ -4,6 +4,7 @@ from .map import Map
 from .npc import NPC
 from .player import Player
 from .quest import Quest
+from .user import User
 
 __all__ = [
     "Item",
@@ -12,4 +13,5 @@ __all__ = [
     "NPC",
     "Player",
     "Quest",
+    "User",
 ]

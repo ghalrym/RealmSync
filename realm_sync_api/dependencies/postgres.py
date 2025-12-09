@@ -1,4 +1,29 @@
-class RealmSyncPostgres: ...
+from typing import Any, Protocol, runtime_checkable
+
+
+@runtime_checkable
+class RealmSyncPostgres(Protocol):
+    """Protocol for PostgreSQL client implementations."""
+
+    async def fetch_one(self, query: str, *args: Any) -> dict[str, Any] | None:
+        """Fetch a single row from the database."""
+        ...
+
+    async def execute(self, query: str, *args: Any) -> None:
+        """Execute a query without returning results."""
+        ...
+
+
+class MockRealmSyncPostgres:
+    """Concrete implementation of RealmSyncPostgres for testing."""
+
+    async def fetch_one(self, query: str, *args: Any) -> dict[str, Any] | None:
+        """Fetch a single row from the database."""
+        return None
+
+    async def execute(self, query: str, *args: Any) -> None:
+        """Execute a query without returning results."""
+        pass
 
 
 POSTGRES_CLIENT: RealmSyncPostgres | None = None

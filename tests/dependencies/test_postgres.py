@@ -2,20 +2,22 @@ import pytest
 
 from realm_sync_api.dependencies import postgres
 from realm_sync_api.dependencies.postgres import (
+    MockRealmSyncPostgres,
     RealmSyncPostgres,
     get_postgres_client,
     set_postgres_client,
 )
 
 
-def test_realm_sync_postgres_is_class():
-    """Test that RealmSyncPostgres is a class."""
+def test_realm_sync_postgres_is_protocol():
+    """Test that RealmSyncPostgres is a Protocol."""
+    # Protocols are types in Python
     assert isinstance(RealmSyncPostgres, type)
 
 
 def test_set_and_get_postgres_client():
     """Test setting and getting postgres client."""
-    postgres_client = RealmSyncPostgres()
+    postgres_client = MockRealmSyncPostgres()
     set_postgres_client(postgres_client)
 
     retrieved_client = get_postgres_client()
@@ -44,6 +46,4 @@ def test_postgres_client_initial_state():
     # Reset to None
     set_postgres_client(None)  # type: ignore
     # The module-level variable should exist
-    assert postgres.POSTGRES_CLIENT is None or isinstance(
-        postgres.POSTGRES_CLIENT, RealmSyncPostgres
-    )
+    assert postgres.POSTGRES_CLIENT is None
