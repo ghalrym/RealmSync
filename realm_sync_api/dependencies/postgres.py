@@ -11,6 +11,10 @@ class _RealmSyncPostgresProtocol(Protocol):
         """Fetch a single row from the database."""
         ...
 
+    async def fetch_all(self, query: str, *args: Any) -> list[dict[str, Any]]:
+        """Fetch all rows from the database."""
+        ...
+
     async def execute(self, query: str, *args: Any) -> None:
         """Execute a query without returning results."""
         ...
@@ -84,6 +88,24 @@ class RealmSyncPostgres:
         if row is None:
             return None
         return dict(row)
+
+    async def fetch_all(self, query: str, *args: Any) -> list[dict[str, Any]]:
+        """
+        Fetch all rows from the database.
+
+        Args:
+            query: SQL query with $1, $2, etc. placeholders
+            *args: Query parameters
+
+        Returns:
+            List of dictionaries with row data
+        """
+        if self._pool is None:
+            await self.connect()
+
+        assert self._pool is not None
+        rows = await self._pool.fetch(query, *args)
+        return [dict(row) for row in rows]
 
     async def execute(self, query: str, *args: Any) -> None:
         """
