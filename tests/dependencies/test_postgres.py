@@ -2,15 +2,16 @@ from typing import Any
 
 import pytest
 
-from realm_sync_api.dependencies import postgres
-from realm_sync_api.dependencies.postgres import (
-    RealmSyncPostgres,
+from realm_sync_api.dependencies import database
+from realm_sync_api.dependencies.database import (
+    POSTGRES_CLIENT,
+    RealmSyncDatabase,
     get_postgres_client,
     set_postgres_client,
 )
 
 
-class MockRealmSyncPostgres:
+class MockRealmSyncDatabase:
     """Concrete implementation of RealmSyncPostgres for testing."""
 
     async def fetch_one(self, query: str, *args: Any) -> dict[str, Any] | None:
@@ -23,14 +24,14 @@ class MockRealmSyncPostgres:
 
 
 def test_realm_sync_postgres_is_protocol():
-    """Test that RealmSyncPostgres is a Protocol."""
+    """Test that RealmSyncDatabase is a Protocol."""
     # Protocols are types in Python
-    assert isinstance(RealmSyncPostgres, type)
+    assert isinstance(RealmSyncDatabase, type)
 
 
 def test_set_and_get_postgres_client():
     """Test setting and getting postgres client."""
-    postgres_client = MockRealmSyncPostgres()
+    postgres_client = MockRealmSyncDatabase()
     set_postgres_client(postgres_client)
 
     retrieved_client = get_postgres_client()
@@ -47,11 +48,11 @@ def test_get_postgres_client_raises_when_not_set():
 
 
 def test_postgres_module_imports():
-    """Test that postgres module can be imported and has expected attributes."""
-    assert hasattr(postgres, "RealmSyncPostgres")
-    assert hasattr(postgres, "POSTGRES_CLIENT")
-    assert hasattr(postgres, "set_postgres_client")
-    assert hasattr(postgres, "get_postgres_client")
+    """Test that database module can be imported and has expected attributes."""
+    assert hasattr(database, "RealmSyncDatabase")
+    assert hasattr(database, "POSTGRES_CLIENT")
+    assert hasattr(database, "set_postgres_client")
+    assert hasattr(database, "get_postgres_client")
 
 
 def test_postgres_client_initial_state():
@@ -59,4 +60,4 @@ def test_postgres_client_initial_state():
     # Reset to None
     set_postgres_client(None)  # type: ignore
     # The module-level variable should exist
-    assert postgres.POSTGRES_CLIENT is None
+    assert POSTGRES_CLIENT is None

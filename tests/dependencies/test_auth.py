@@ -1,6 +1,7 @@
 """Tests for RealmSyncAuth class."""
 
 from datetime import UTC, datetime, timedelta
+from typing import Any
 from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
@@ -8,7 +9,53 @@ from fastapi import HTTPException, Request, status
 from jose import jwt
 
 from realm_sync_api.dependencies.auth import RealmSyncAuth
-from realm_sync_api.dependencies.postgres import MockRealmSyncPostgres, set_postgres_client
+from realm_sync_api.dependencies.database import set_postgres_client
+
+
+class MockRealmSyncPostgres:
+    """Mock RealmSyncDatabase for testing."""
+
+    def __init__(self) -> None:
+        """Initialize mock with postgres attribute."""
+        self.postgres = MagicMock()
+        self.postgres.execute = AsyncMock()
+        self._select_results: list[Any] = []
+        self._select_call_count = 0
+        self._select_side_effect: list[list[Any]] | None = None
+        self.create = AsyncMock()
+
+    async def fetch_one(self, query: str, *args: Any) -> dict[str, Any] | None:
+        """Fetch a single row from the database."""
+        return None
+
+    async def execute(self, query: str, *args: Any) -> None:
+        """Execute a query without returning results."""
+        pass
+
+    async def register_model(self, model: Any) -> None:
+        """Register a model with the database."""
+        pass
+
+    async def select(self, model: Any, filters: dict[str, Any] | None = None) -> list[Any]:
+        """Select records from the database."""
+        # If select was set up with side_effect, use that
+        if self._select_side_effect is not None:
+            result = (
+                self._select_side_effect[self._select_call_count]
+                if self._select_call_count < len(self._select_side_effect)
+                else []
+            )
+            self._select_call_count += 1
+            return result
+        return self._select_results
+
+    async def create(self, instance: Any) -> Any:
+        """Create a record in the database."""
+        return instance
+
+    async def soft_delete(self, model: Any, id: str) -> None:
+        """Soft delete a record."""
+        pass
 
 
 def test_realm_sync_auth_init_with_defaults():
@@ -126,11 +173,14 @@ def test_decode_token_wrong_secret():
 @pytest.mark.asyncio
 async def test_get_token_from_db_with_result():
     """Test _get_token_from_db when token exists in database."""
+
     auth = RealmSyncAuth()
     postgres_client = MockRealmSyncPostgres()
-    postgres_client.fetch_one = AsyncMock(
-        return_value={"user_id": "user123", "expires_at": datetime.now(UTC)}
-    )
+    # Create a mock token object
+    token_obj = MagicMock()
+    token_obj.user_id = "user123"
+    token_obj.expires_at = datetime.now(UTC)
+    postgres_client._select_results = [token_obj]
     set_postgres_client(postgres_client)
 
     result = await auth._get_token_from_db("test-token")
@@ -169,13 +219,13 @@ async def test_store_token_in_db():
     """Test _store_token_in_db."""
     auth = RealmSyncAuth()
     postgres_client = MockRealmSyncPostgres()
-    postgres_client.execute = AsyncMock()
     set_postgres_client(postgres_client)
 
     expires_at = datetime.now(UTC) + timedelta(minutes=30)
     await auth._store_token_in_db("test-token", "user123", expires_at)
 
-    postgres_client.execute.assert_called_once()
+    # The method calls postgres.postgres.execute, not postgres.execute
+    postgres_client.postgres.execute.assert_called_once()
 
 
 @pytest.mark.asyncio
@@ -197,11 +247,12 @@ async def test_revoke_token_in_db():
     """Test _revoke_token_in_db."""
     auth = RealmSyncAuth()
     postgres_client = MockRealmSyncPostgres()
-    postgres_client.execute = AsyncMock()
+    postgres_client.soft_delete = AsyncMock()
     set_postgres_client(postgres_client)
 
     await auth._revoke_token_in_db("test-token")
-    postgres_client.execute.assert_called_once()
+    # The method calls db.soft_delete, not execute
+    postgres_client.soft_delete.assert_called_once()
 
 
 @pytest.mark.asyncio
@@ -223,6 +274,7 @@ async def test_validate_session_no_token():
     auth = RealmSyncAuth()
     request = MagicMock(spec=Request)
     request.headers = {}
+    request.cookies = {}
 
     with pytest.raises(HTTPException) as exc_info:
         await auth.validate_session(request)
@@ -281,6 +333,7 @@ async def test_validate_session_valid_token_with_db_not_expired():
 @pytest.mark.asyncio
 async def test_validate_session_valid_token_with_db_expired():
     """Test validate_session with valid token but expired in database."""
+
     auth = RealmSyncAuth(secret_key="test-secret")
     request = MagicMock(spec=Request)
     request.state = MagicMock()
@@ -293,9 +346,11 @@ async def test_validate_session_valid_token_with_db_expired():
     # Mock postgres client to return token data with past expiration
     expires_at = datetime.now(UTC) - timedelta(minutes=10)
     postgres_client = MockRealmSyncPostgres()
-    postgres_client.fetch_one = AsyncMock(
-        return_value={"user_id": "user123", "expires_at": expires_at}
-    )
+    # Create a mock token object with expired time
+    token_obj = MagicMock()
+    token_obj.user_id = "user123"
+    token_obj.expires_at = expires_at
+    postgres_client._select_results = [token_obj]
     set_postgres_client(postgres_client)
 
     with pytest.raises(HTTPException) as exc_info:
@@ -391,7 +446,6 @@ async def test_create_token():
     """Test create_token."""
     auth = RealmSyncAuth(secret_key="test-secret")
     postgres_client = MockRealmSyncPostgres()
-    postgres_client.execute = AsyncMock()
     set_postgres_client(postgres_client)
 
     token = await auth.create_token("user123")
@@ -402,8 +456,8 @@ async def test_create_token():
     payload = jwt.decode(token, "test-secret", algorithms=["HS256"])
     assert payload["sub"] == "user123"
 
-    # Verify database was called
-    postgres_client.execute.assert_called_once()
+    # Verify database was called (via postgres.postgres.execute)
+    postgres_client.postgres.execute.assert_called_once()
 
 
 @pytest.mark.asyncio
@@ -429,11 +483,12 @@ async def test_revoke_token():
     """Test revoke_token."""
     auth = RealmSyncAuth()
     postgres_client = MockRealmSyncPostgres()
-    postgres_client.execute = AsyncMock()
+    postgres_client.soft_delete = AsyncMock()
     set_postgres_client(postgres_client)
 
     await auth.revoke_token("test-token")
-    postgres_client.execute.assert_called_once()
+    # The method calls db.soft_delete, not execute
+    postgres_client.soft_delete.assert_called_once()
 
 
 @patch("realm_sync_api.dependencies.auth.pwd_context")
@@ -496,3 +551,267 @@ async def test_get_current_user():
     assert user["payload"] is not None
     assert user["payload"]["sub"] == "user123"
 
+
+@pytest.mark.asyncio
+async def test_signup_success():
+    """Test successful user signup."""
+
+    auth = RealmSyncAuth(secret_key="test-secret")
+    postgres_client = MockRealmSyncPostgres()
+    postgres_client._select_results = []  # No existing users
+    postgres_client.create = AsyncMock()
+    set_postgres_client(postgres_client)
+
+    # Mock password hashing
+    with patch.object(auth, "get_password_hash", return_value="$2b$12$hashedpassword"):
+        result = await auth.signup("testuser", "test@example.com", "password123")
+        assert "user_id" in result
+        assert result["username"] == "testuser"
+        assert result["email"] == "test@example.com"
+        postgres_client.create.assert_called_once()
+
+
+@pytest.mark.asyncio
+async def test_signup_username_exists():
+    """Test signup when username already exists."""
+
+    auth = RealmSyncAuth(secret_key="test-secret")
+    postgres_client = MockRealmSyncPostgres()
+    # Mock existing user by username
+    existing_user = MagicMock()
+    existing_user.username = "testuser"
+    postgres_client._select_results = [existing_user]
+    set_postgres_client(postgres_client)
+
+    with pytest.raises(HTTPException) as exc_info:
+        await auth.signup("testuser", "test@example.com", "password123")
+    assert exc_info.value.status_code == status.HTTP_400_BAD_REQUEST
+    assert "already exists" in exc_info.value.detail
+
+
+@pytest.mark.asyncio
+async def test_signup_email_exists():
+    """Test signup when email already exists."""
+
+    auth = RealmSyncAuth(secret_key="test-secret")
+    postgres_client = MockRealmSyncPostgres()
+    # First select returns empty (no username match), second returns existing email
+    postgres_client._select_results = []
+    postgres_client._select_side_effect = [[], [MagicMock()]]  # No username, but email exists
+    set_postgres_client(postgres_client)
+
+    with pytest.raises(HTTPException) as exc_info:
+        await auth.signup("testuser", "test@example.com", "password123")
+    assert exc_info.value.status_code == status.HTTP_400_BAD_REQUEST
+    assert "already exists" in exc_info.value.detail
+
+
+@pytest.mark.asyncio
+async def test_login_success():
+    """Test successful login."""
+
+    auth = RealmSyncAuth(secret_key="test-secret")
+    postgres_client = MockRealmSyncPostgres()
+    # Create mock user
+    user = MagicMock()
+    user.id = "user123"
+    user.username = "testuser"
+    user.email = "test@example.com"
+    user.is_active = True
+    user.hashed_password = "$2b$12$hashedpassword"
+    postgres_client._select_results = [user]
+    postgres_client.create = AsyncMock()
+    postgres_client.postgres.execute = AsyncMock()
+    set_postgres_client(postgres_client)
+
+    # Mock password verification
+    with patch.object(auth, "verify_password", return_value=True):
+        token = await auth.login("testuser", "password123")
+        assert isinstance(token, str)
+        assert len(token) > 0
+
+
+@pytest.mark.asyncio
+async def test_login_user_not_found():
+    """Test login when user doesn't exist."""
+
+    auth = RealmSyncAuth(secret_key="test-secret")
+    postgres_client = MockRealmSyncPostgres()
+    postgres_client._select_results = []  # No users found
+    set_postgres_client(postgres_client)
+
+    with pytest.raises(HTTPException) as exc_info:
+        await auth.login("nonexistent", "password123")
+    assert exc_info.value.status_code == status.HTTP_401_UNAUTHORIZED
+    assert "Incorrect username or password" in exc_info.value.detail
+
+
+@pytest.mark.asyncio
+async def test_login_inactive_user():
+    """Test login when user is inactive."""
+
+    auth = RealmSyncAuth(secret_key="test-secret")
+    postgres_client = MockRealmSyncPostgres()
+    user = MagicMock()
+    user.id = "user123"
+    user.username = "testuser"
+    user.is_active = False
+    postgres_client._select_results = [user]
+    set_postgres_client(postgres_client)
+
+    with pytest.raises(HTTPException) as exc_info:
+        await auth.login("testuser", "password123")
+    assert exc_info.value.status_code == status.HTTP_401_UNAUTHORIZED
+    assert "inactive" in exc_info.value.detail.lower()
+
+
+@pytest.mark.asyncio
+async def test_login_wrong_password():
+    """Test login with wrong password."""
+
+    auth = RealmSyncAuth(secret_key="test-secret")
+    postgres_client = MockRealmSyncPostgres()
+    user = MagicMock()
+    user.id = "user123"
+    user.username = "testuser"
+    user.is_active = True
+    user.hashed_password = "$2b$12$hashedpassword"
+    postgres_client._select_results = [user]
+    set_postgres_client(postgres_client)
+
+    # Mock password verification to return False
+    with patch.object(auth, "verify_password", return_value=False):
+        with pytest.raises(HTTPException) as exc_info:
+            await auth.login("testuser", "wrongpassword")
+        assert exc_info.value.status_code == status.HTTP_401_UNAUTHORIZED
+        assert "Incorrect username or password" in exc_info.value.detail
+
+
+@pytest.mark.asyncio
+async def test_validate_session_with_string_expires_at_naive():
+    """Test validate_session with string expires_at that becomes naive after parsing (lines 175-187)."""
+    auth = RealmSyncAuth(secret_key="test-secret")
+    request = MagicMock(spec=Request)
+    request.state = MagicMock()
+
+    # Create a valid token
+    data = {"sub": "user123", "exp": datetime.now(UTC) + timedelta(minutes=30)}
+    token = jwt.encode(data, "test-secret", algorithm="HS256")
+    request.headers = {"Authorization": f"Bearer {token}"}
+
+    # Mock postgres client to return token data with string expiration that parses to naive datetime
+    expires_at_str = (datetime.now(UTC) + timedelta(minutes=20)).strftime("%Y-%m-%d %H:%M:%S")
+    postgres_client = MockRealmSyncPostgres()
+    token_obj = MagicMock()
+    token_obj.user_id = "user123"
+    token_obj.expires_at = expires_at_str
+    postgres_client._select_results = [token_obj]
+    set_postgres_client(postgres_client)
+
+    result = await auth.validate_session(request)
+    assert result is True
+
+
+@pytest.mark.asyncio
+async def test_validate_session_with_string_expires_at_invalid():
+    """Test validate_session with invalid string expires_at (lines 179-182)."""
+    auth = RealmSyncAuth(secret_key="test-secret")
+    request = MagicMock(spec=Request)
+    request.state = MagicMock()
+
+    # Create a valid token
+    data = {"sub": "user123", "exp": datetime.now(UTC) + timedelta(minutes=30)}
+    token = jwt.encode(data, "test-secret", algorithm="HS256")
+    request.headers = {"Authorization": f"Bearer {token}"}
+
+    # Mock postgres client to return token data with invalid string expiration
+    postgres_client = MockRealmSyncPostgres()
+    token_obj = MagicMock()
+    token_obj.user_id = "user123"
+    token_obj.expires_at = "invalid-date-string"
+    postgres_client._select_results = [token_obj]
+    set_postgres_client(postgres_client)
+
+    # Should still work, just skip expiration check
+    result = await auth.validate_session(request)
+    assert result is True
+
+
+@pytest.mark.asyncio
+async def test_validate_session_with_string_expires_at_z_format():
+    """Test validate_session with string expires_at in Z format (line 178)."""
+    auth = RealmSyncAuth(secret_key="test-secret")
+    request = MagicMock(spec=Request)
+    request.state = MagicMock()
+
+    # Create a valid token
+    data = {"sub": "user123", "exp": datetime.now(UTC) + timedelta(minutes=30)}
+    token = jwt.encode(data, "test-secret", algorithm="HS256")
+    request.headers = {"Authorization": f"Bearer {token}"}
+
+    # Mock postgres client to return token data with Z format string
+    expires_at_str = (datetime.now(UTC) + timedelta(minutes=20)).isoformat() + "Z"
+    postgres_client = MockRealmSyncPostgres()
+    token_obj = MagicMock()
+    token_obj.user_id = "user123"
+    token_obj.expires_at = expires_at_str
+    postgres_client._select_results = [token_obj]
+    set_postgres_client(postgres_client)
+
+    result = await auth.validate_session(request)
+    assert result is True
+
+
+@pytest.mark.asyncio
+async def test_validate_session_with_unexpected_expires_at_type():
+    """Test validate_session with unexpected expires_at type (lines 188-191)."""
+    auth = RealmSyncAuth(secret_key="test-secret")
+    request = MagicMock(spec=Request)
+    request.state = MagicMock()
+
+    # Create a valid token
+    data = {"sub": "user123", "exp": datetime.now(UTC) + timedelta(minutes=30)}
+    token = jwt.encode(data, "test-secret", algorithm="HS256")
+    request.headers = {"Authorization": f"Bearer {token}"}
+
+    # Mock postgres client to return token data with unexpected type (list)
+    postgres_client = MockRealmSyncPostgres()
+    token_obj = MagicMock()
+    token_obj.user_id = "user123"
+    token_obj.expires_at = [1, 2, 3]  # Unexpected type
+    postgres_client._select_results = [token_obj]
+    set_postgres_client(postgres_client)
+
+    # Should still work, just skip expiration check
+    result = await auth.validate_session(request)
+    assert result is True
+
+
+@pytest.mark.asyncio
+async def test_signup_exception_handling():
+    """Test signup exception handling (lines 327-329)."""
+    auth = RealmSyncAuth(secret_key="test-secret")
+    postgres_client = MockRealmSyncPostgres()
+    # Make select raise an exception
+    postgres_client.select = AsyncMock(side_effect=Exception("Database error"))
+    set_postgres_client(postgres_client)
+
+    with pytest.raises(HTTPException) as exc_info:
+        await auth.signup("testuser", "test@example.com", "password123")
+    assert exc_info.value.status_code == status.HTTP_500_INTERNAL_SERVER_ERROR
+    assert "internal error" in exc_info.value.detail.lower()
+
+
+@pytest.mark.asyncio
+async def test_login_exception_handling():
+    """Test login exception handling (lines 385-387)."""
+    auth = RealmSyncAuth(secret_key="test-secret")
+    postgres_client = MockRealmSyncPostgres()
+    # Make select raise an exception
+    postgres_client.select = AsyncMock(side_effect=Exception("Database error"))
+    set_postgres_client(postgres_client)
+
+    with pytest.raises(HTTPException) as exc_info:
+        await auth.login("testuser", "password123")
+    assert exc_info.value.status_code == status.HTTP_500_INTERNAL_SERVER_ERROR
+    assert "Error during authentication" in exc_info.value.detail

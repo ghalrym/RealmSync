@@ -1,12 +1,15 @@
 """Tests for web_manager players router."""
 
-from unittest.mock import patch
+from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
-from fastapi import FastAPI
+from fastapi import FastAPI, HTTPException
+from fastapi.responses import RedirectResponse
 from fastapi.testclient import TestClient
 
+from realm_sync_api.dependencies.auth import RealmSyncAuth
 from realm_sync_api.web_manager.routers import players_router
+from realm_sync_api.web_manager.routers.auth_dependency import check_auth
 from realm_sync_api.web_manager.web_manager_router import WebManagerRouter
 
 
@@ -162,3 +165,94 @@ def test_delete_player(app):
         response = client.post("/player/delete/1", follow_redirects=False)
         assert response.status_code == 303
         mock_delete.assert_called_once()
+
+
+@pytest.mark.asyncio
+async def test_list_players_redirects_when_not_authenticated(app):
+    """Test list players redirects when not authenticated (line 18)."""
+    with patch("realm_sync_api.web_manager.routers.players.check_auth") as mock_check:
+        mock_check.return_value = RedirectResponse(url="/web/login", status_code=303)
+        with patch("realm_sync_api.web_manager.routers.players.fetch_from_api"):
+            client = TestClient(app)
+            response = client.get("/player/", follow_redirects=False)
+            assert response.status_code == 303
+            assert "/web/login" in response.headers.get("location", "")
+
+
+@pytest.mark.asyncio
+async def test_create_player_form_redirects_when_not_authenticated(app):
+    """Test create player form redirects when not authenticated (line 36)."""
+    with patch("realm_sync_api.web_manager.routers.players.check_auth") as mock_check:
+        mock_check.return_value = RedirectResponse(url="/web/login", status_code=303)
+        client = TestClient(app)
+        response = client.get("/player/create", follow_redirects=False)
+        assert response.status_code == 303
+        assert "/web/login" in response.headers.get("location", "")
+
+
+@pytest.mark.asyncio
+async def test_create_player_redirects_when_not_authenticated(app):
+    """Test create player redirects when not authenticated (line 72)."""
+    with patch("realm_sync_api.web_manager.routers.players.check_auth") as mock_check:
+        mock_check.return_value = RedirectResponse(url="/web/login", status_code=303)
+        with patch("realm_sync_api.web_manager.routers.players.create_in_api"):
+            client = TestClient(app)
+            response = client.post(
+                "/player/create",
+                data={"id": "1", "name": "Test", "server": "s1", "faction": "A", "location": "{}"},
+                follow_redirects=False,
+            )
+            assert response.status_code == 303
+            assert "/web/login" in response.headers.get("location", "")
+
+
+@pytest.mark.asyncio
+async def test_edit_player_form_redirects_when_not_authenticated(app):
+    """Test edit player form redirects when not authenticated (line 98)."""
+    with patch("realm_sync_api.web_manager.routers.players.check_auth") as mock_check:
+        mock_check.return_value = RedirectResponse(url="/web/login", status_code=303)
+        with patch("realm_sync_api.web_manager.routers.players.get_from_api"):
+            client = TestClient(app)
+            response = client.get("/player/edit/1", follow_redirects=False)
+            assert response.status_code == 303
+            assert "/web/login" in response.headers.get("location", "")
+
+
+@pytest.mark.asyncio
+async def test_update_player_redirects_when_not_authenticated(app):
+    """Test update player redirects when not authenticated (line 135)."""
+    with patch("realm_sync_api.web_manager.routers.players.check_auth") as mock_check:
+        mock_check.return_value = RedirectResponse(url="/web/login", status_code=303)
+        with patch("realm_sync_api.web_manager.routers.players.update_in_api"):
+            client = TestClient(app)
+            response = client.post(
+                "/player/edit/1",
+                data={"name": "Test", "server": "s1", "faction": "A", "location": "{}"},
+                follow_redirects=False,
+            )
+            assert response.status_code == 303
+            assert "/web/login" in response.headers.get("location", "")
+
+
+@pytest.mark.asyncio
+async def test_delete_player_redirects_when_not_authenticated(app):
+    """Test delete player redirects when not authenticated (line 161)."""
+    with patch("realm_sync_api.web_manager.routers.players.check_auth") as mock_check:
+        mock_check.return_value = RedirectResponse(url="/web/login", status_code=303)
+        with patch("realm_sync_api.web_manager.routers.players.delete_from_api"):
+            client = TestClient(app)
+            response = client.post("/player/delete/1", follow_redirects=False)
+            assert response.status_code == 303
+            assert "/web/login" in response.headers.get("location", "")
+
+
+@pytest.mark.asyncio
+async def test_view_player_redirects_when_not_authenticated(app):
+    """Test view player redirects when not authenticated (line 175)."""
+    with patch("realm_sync_api.web_manager.routers.players.check_auth") as mock_check:
+        mock_check.return_value = RedirectResponse(url="/web/login", status_code=303)
+        with patch("realm_sync_api.web_manager.routers.players.get_from_api"):
+            client = TestClient(app)
+            response = client.get("/player/1", follow_redirects=False)
+            assert response.status_code == 303
+            assert "/web/login" in response.headers.get("location", "")

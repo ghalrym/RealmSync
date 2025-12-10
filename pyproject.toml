@@ -127,6 +127,7 @@ omit = [
     "*/setup.py",
     "*/scripts/*",
     "*/__init__.py",
+    "*/dependencies/database.py",  # Integration code requiring real database
 ]
 
 [tool.coverage.report]
