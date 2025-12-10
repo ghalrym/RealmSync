@@ -27,12 +27,13 @@ from realm_sync_api import RealmSyncApi
 from realm_sync_api.models import Player
 from realm_sync_api.hooks import RealmSyncHook
 from realm_sync_api.dependencies.redis import RealmSyncRedis
+from realm_sync_api.dependencies.web_manager import WebManager
 
-# Create the API instance
-app = RealmSyncApi(web_manager_perfix="/admin")
-
-# Set up Redis client
-app.set_redis_client(RealmSyncRedis(host="localhost", port=6379, db=0))
+# Create the API instance with Redis client
+app = RealmSyncApi(
+    web_manager=WebManager(prefix="/admin"),
+    redis_client=RealmSyncRedis(host="localhost", port=6379, db=0)
+)
 
 # Register hooks
 @app.hook(RealmSyncHook.PLAYER_CREATED)

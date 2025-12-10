@@ -7,7 +7,7 @@ from datetime import datetime
 from fastapi import APIRouter, Request, WebSocket, WebSocketDisconnect
 from fastapi.responses import HTMLResponse
 
-from realm_sync_api.web_manager.routers.tempate import templates
+from .template import templates
 
 router = APIRouter(prefix="/logs", tags=["logs"])
 

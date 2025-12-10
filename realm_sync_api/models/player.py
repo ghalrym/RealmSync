@@ -1,5 +1,5 @@
-from realm_sync_api.models._base import RealmSyncModel
-from realm_sync_api.models.location import Location
+from ._base import RealmSyncModel
+from .location import Location
 
 
 class Player(RealmSyncModel):

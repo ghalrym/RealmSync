@@ -3,7 +3,7 @@ from typing import Generic, TypeVar
 
 from pydantic import BaseModel
 
-from realm_sync_api.dependencies.hooks import RealmSyncHook, get_hooks
+from .dependencies.hooks import RealmSyncHook, get_hooks
 
 ModelType = TypeVar("ModelType", bound=BaseModel)
 ListRequestArgs = TypeVar("ListRequestArgs", bound=BaseModel)
