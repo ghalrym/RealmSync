@@ -154,7 +154,7 @@ def start_project() -> None:
 
     # Create main.py with custom configuration
     # Build main.py content based on selected options
-    main_lines = ['"""Main application entry point."""', "", "import os", ""]
+    main_lines = ['"""Main application entry point."""', ""]
 
     imports = ["from realm_sync_api import RealmSyncApi"]
     if use_auth:
@@ -229,7 +229,7 @@ def start_project() -> None:
     (project_path / "Dockerfile").write_text(dockerfile_content)
 
     # Create docker-compose.yml
-    compose_lines = ["version: '3.8'", "", "services:"]
+    compose_lines = ["", "services:"]
 
     # Add app service
     compose_lines.append("  app:")
@@ -308,6 +308,10 @@ def start_project() -> None:
 
     compose_content = "\n".join(compose_lines)
     (project_path / "docker-compose.yml").write_text(compose_content)
+
+    # Create .dockerignore
+    dockerignore_template = (scaffold_dir / ".dockerignore").read_text()
+    (project_path / ".dockerignore").write_text(dockerignore_template)
 
     # Create README.md
     readme_template = (scaffold_dir / "README.md").read_text()
