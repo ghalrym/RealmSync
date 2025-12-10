@@ -1,9 +1,34 @@
 version: '3.8'
 
 services:
+  app:
+    build:
+      context: ..
+      dockerfile: example/Dockerfile
+    container_name: example_app
+    ports:
+      - "8000:8000"
+    environment:
+      REDIS_HOST: redis
+      REDIS_PORT: 6379
+      REDIS_DB: 0
+      POSTGRES_HOST: postgres
+      POSTGRES_PORT: 5432
+      POSTGRES_USER: realm_sync
+      POSTGRES_PASSWORD: realm_sync_password
+      POSTGRES_DB: realm_sync_db
+    depends_on:
+      redis:
+        condition: service_healthy
+      postgres:
+        condition: service_healthy
+    volumes:
+      - .:/app
+      - ../realm_sync_api:/realm_sync_api_source
+
   postgres:
     image: postgres:15-alpine
-    container_name: realm_sync_postgres
+    container_name: example_postgres
     environment:
       POSTGRES_USER: realm_sync
       POSTGRES_PASSWORD: realm_sync_password
@@ -20,7 +45,7 @@ services:
 
   redis:
     image: redis:7-alpine
-    container_name: realm_sync_redis
+    container_name: example_redis
     ports:
       - "6379:6379"
     healthcheck:
@@ -29,31 +54,5 @@ services:
       timeout: 5s
       retries: 5
 
-  app:
-    build:
-      context: ..
-      dockerfile: example/Dockerfile
-    container_name: realm_sync_app
-    ports:
-      - "8000:8000"
-    environment:
-      REDIS_HOST: redis
-      REDIS_PORT: 6379
-      REDIS_DB: 0
-      POSTGRES_HOST: postgres
-      POSTGRES_PORT: 5432
-      POSTGRES_USER: realm_sync
-      POSTGRES_PASSWORD: realm_sync_password
-      POSTGRES_DB: realm_sync_db
-    depends_on:
-      postgres:
-        condition: service_healthy
-      redis:
-        condition: service_healthy
-    volumes:
-      - ../:/app
-
 volumes:
   postgres_data:
-
-

@@ -3,12 +3,13 @@ requires = ["setuptools>=61.0", "wheel"]
 build-backend = "setuptools.build_meta"
 
 [project]
-name = "{PROJECT_NAME}"
+name = "example"
 version = "0.1.0"
 description = "A RealmSync API project"
 requires-python = ">=3.11"
 dependencies = [
-    "realm-sync-api",
+    # realm-sync-api is installed separately in Dockerfile from local source
+    # To install from PyPI instead, add: "realm-sync-api"
     "python-dotenv",
     "uvicorn[standard]>=0.24.0",
 ]
@@ -21,5 +22,5 @@ dev = [
 ]
 
 [tool.setuptools]
-packages = ["{PACKAGE_NAME}"]
+packages = ["example"]
 
