@@ -104,6 +104,9 @@ class RealmSyncDatabase:
         self.postgres = _InternalPostgresClient(host, port, user, password, database, **kwargs)
         self._registered_models: dict[type[RealmSyncModel], str] = {}
         self._model_metadata: dict[type[RealmSyncModel], dict[str, Any]] = {}
+        self._pending_foreign_keys: list[
+            tuple[str, str, str]
+        ] = []  # (table_name, column_name, referenced_table)
 
     async def _ensure_connection(self) -> None:
         """Ensure PostgreSQL connection is open."""
@@ -353,16 +356,20 @@ class RealmSyncDatabase:
 
         # Add other fields
         for field_name, field_info in model_fields.items():
-            # Skip metadata as it's already added
-            if field_name == "metadata":
+            # Skip fields that are already added (id, soft_deleted, metadata)
+            if field_name in ("id", "soft_deleted", "metadata"):
                 continue
 
             field_type = field_info.annotation
 
             # Handle nested models as foreign keys
+            # Create column without constraint first, add constraint later
             if field_name in nested_models:
                 nested_table = self._get_table_name(nested_models[field_name])
-                columns.append(f"{field_name}_id TEXT REFERENCES {nested_table}(id)")
+                fk_column = f"{field_name}_id"
+                columns.append(f"{fk_column} TEXT")
+                # Store foreign key to add after all tables are created
+                self._pending_foreign_keys.append((table_name, fk_column, nested_table))
                 continue
 
             # Skip list fields (handled by junction tables)
@@ -396,6 +403,43 @@ class RealmSyncDatabase:
         create_sql = f"CREATE TABLE IF NOT EXISTS {table_name} ({', '.join(columns)})"
         await self.postgres.execute(create_sql)
 
+    async def _add_pending_foreign_keys(self) -> None:
+        """Add all pending foreign key constraints after all tables are created."""
+        await self._ensure_connection()
+
+        for table_name, column_name, referenced_table in self._pending_foreign_keys:
+            # Check if constraint already exists
+            constraint_name = f"{table_name}_{column_name}_fkey"
+            constraint_exists = await self.postgres.fetch_one(
+                """
+                SELECT 1 FROM information_schema.table_constraints
+                WHERE constraint_name = $1
+                AND table_name = $2
+                AND table_schema = 'public'
+                """,
+                constraint_name,
+                table_name,
+            )
+
+            if not constraint_exists:
+                try:
+                    await self.postgres.execute(
+                        f"ALTER TABLE {table_name} "
+                        f"ADD CONSTRAINT {constraint_name} "
+                        f"FOREIGN KEY ({column_name}) REFERENCES {referenced_table}(id)"
+                    )
+                except Exception as e:
+                    # If constraint already exists or table doesn't exist, skip
+                    # This can happen in race conditions or if manually created
+                    if (
+                        "already exists" not in str(e).lower()
+                        and "does not exist" not in str(e).lower()
+                    ):
+                        raise
+
+        # Clear pending foreign keys after adding them
+        self._pending_foreign_keys.clear()
+
     async def _update_table(
         self,
         model_class: type[RealmSyncModel],
@@ -413,7 +457,8 @@ class RealmSyncDatabase:
 
         # Check each model field
         for field_name, field_info in model_fields.items():
-            if field_name == "metadata":
+            # Skip fields that are always present (id, soft_deleted, metadata)
+            if field_name in ("id", "soft_deleted", "metadata"):
                 continue
 
             field_type = field_info.annotation
