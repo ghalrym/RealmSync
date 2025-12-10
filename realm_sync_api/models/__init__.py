@@ -42,6 +42,6 @@ async def register_all_models(database) -> None:
     # First, create all tables without foreign key constraints
     for model in _ALL_MODELS:
         await database.register_model(model)
-    
+
     # Then, add all foreign key constraints after all tables exist
     await database._add_pending_foreign_keys()

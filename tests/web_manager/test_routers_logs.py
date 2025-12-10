@@ -403,5 +403,5 @@ async def test_websocket_close_exception_in_finally():
 
     # The close exception handling in lines 162-164 is defensive
     # It's tested by normal WebSocket disconnection
-    with client.websocket_connect("/logs/ws") as websocket:
+    with client.websocket_connect("/logs/ws"):
         pass  # Connection closes normally, testing finally block exception handling

@@ -21,4 +21,3 @@ class Redis(RealmSyncRedis):
             db=int(os.getenv("REDIS_DB", "0")),
             **kwargs,
         )
-

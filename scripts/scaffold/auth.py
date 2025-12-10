@@ -34,4 +34,3 @@ class Auth(RealmSyncAuth):
         # # Add custom checks here
 
         return result
-

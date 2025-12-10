@@ -1,15 +1,13 @@
 """Tests for web_manager players router."""
 
-from unittest.mock import AsyncMock, MagicMock, patch
+from unittest.mock import patch
 
 import pytest
-from fastapi import FastAPI, HTTPException
+from fastapi import FastAPI
 from fastapi.responses import RedirectResponse
 from fastapi.testclient import TestClient
 
-from realm_sync_api.dependencies.auth import RealmSyncAuth
 from realm_sync_api.web_manager.routers import players_router
-from realm_sync_api.web_manager.routers.auth_dependency import check_auth
 from realm_sync_api.web_manager.web_manager_router import WebManagerRouter
 
 

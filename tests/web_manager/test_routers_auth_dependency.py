@@ -1,6 +1,6 @@
 """Tests for web_manager auth_dependency."""
 
-from unittest.mock import AsyncMock, MagicMock, patch
+from unittest.mock import AsyncMock, MagicMock
 
 import pytest
 from fastapi import HTTPException, Request, status
@@ -41,7 +41,9 @@ async def test_check_auth_valid_session():
 async def test_check_auth_http_exception():
     """Test check_auth redirects on HTTPException (lines 23-28)."""
     auth = MagicMock(spec=RealmSyncAuth)
-    auth.validate_session = AsyncMock(side_effect=HTTPException(status_code=401, detail="Unauthorized"))
+    auth.validate_session = AsyncMock(
+        side_effect=HTTPException(status_code=401, detail="Unauthorized")
+    )
     templates.env.globals["web_auth"] = auth
     templates.env.globals["web_prefix"] = "/web"
 
@@ -50,4 +52,3 @@ async def test_check_auth_http_exception():
     assert isinstance(result, RedirectResponse)
     assert result.status_code == status.HTTP_303_SEE_OTHER
     assert "/web/login" in result.headers.get("location", "")
-

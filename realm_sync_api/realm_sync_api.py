@@ -100,7 +100,7 @@ class RealmSyncApi(FastAPI):
         # Add auth middleware only if auth is explicitly provided
         # Skip web manager routes as they handle their own authentication
         if auth is not None:
-            self.add_middleware(AuthMiddleware, auth=auth, web_manager_prefix=web_manager_prefix)
+            self.add_middleware(AuthMiddleware, auth=auth, web_manager_prefix=web_manager_prefix)  # type: ignore[arg-type]
 
         # Install dark mode Swagger UI
         self._add_dark_mode_to_swagger()

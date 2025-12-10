@@ -13,8 +13,8 @@ async def check_auth(request: Request) -> RedirectResponse | None:
     Returns RedirectResponse if not authenticated, None if authenticated.
     """
     # Get auth from template globals (set by WebManagerRouter)
-    auth: RealmSyncAuth | None = templates.env.globals.get("web_auth")
-    web_prefix: str = templates.env.globals.get("web_prefix", "/web")
+    auth: RealmSyncAuth | None = templates.env.globals.get("web_auth")  # type: ignore[assignment]
+    web_prefix: str = templates.env.globals.get("web_prefix", "/web")  # type: ignore[assignment]
 
     if not auth:
         # If no auth is configured, allow access

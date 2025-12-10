@@ -272,18 +272,16 @@ async def test_realm_sync_api_auth_middleware_exception_handling():
 @pytest.mark.asyncio
 async def test_realm_sync_api_register_models_startup():
     """Test that models are registered on startup when postgres_client is provided (line 117)."""
-    from realm_sync_api.models import register_all_models
 
     postgres_client = MagicMock(spec=RealmSyncDatabase)
     postgres_client.register_model = AsyncMock()
-    
-    with patch("realm_sync_api.realm_sync_api.register_all_models") as mock_register:
+
+    with patch("realm_sync_api.realm_sync_api.register_all_models"):
         app = RealmSyncApi(postgres_client=postgres_client)
-        
+
         # Trigger startup event manually
-        from fastapi.testclient import TestClient
-        client = TestClient(app)
-        
+        TestClient(app)
+
         # Startup events are triggered when the app starts
         # The register_all_models should be called in the startup event
         # We verify the app was created successfully
