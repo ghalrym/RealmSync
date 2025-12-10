@@ -1,6 +1,6 @@
 from datetime import datetime
 
-from realm_sync_api.models._base import RealmSyncModel
+from ._base import RealmSyncModel
 
 
 class User(RealmSyncModel):

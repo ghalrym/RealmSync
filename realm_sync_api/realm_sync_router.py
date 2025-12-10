@@ -1,6 +1,6 @@
 from fastapi import APIRouter
 
-from realm_sync_api.realm_sync_retriever import ListRequestArgs, ModelType, RealmSyncRetriever
+from .realm_sync_retriever import ListRequestArgs, ModelType, RealmSyncRetriever
 
 
 class RealmSyncRouter(APIRouter):

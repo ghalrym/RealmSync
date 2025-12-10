@@ -3,8 +3,8 @@
 from fastapi import HTTPException, Request, status
 from fastapi.responses import RedirectResponse
 
-from realm_sync_api.dependencies.auth import RealmSyncAuth
-from realm_sync_api.web_manager.routers.template import templates
+from ...dependencies.auth import RealmSyncAuth
+from .template import templates
 
 
 async def check_auth(request: Request) -> RedirectResponse | None:

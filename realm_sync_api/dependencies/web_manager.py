@@ -1,7 +1,7 @@
 from typing import Any
 
-from realm_sync_api.dependencies.auth import RealmSyncAuth
-from realm_sync_api.web_manager.web_manager_router import WebManagerRouter
+from ..web_manager.web_manager_router import WebManagerRouter
+from .auth import RealmSyncAuth
 
 
 class WebManager:

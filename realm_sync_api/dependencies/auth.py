@@ -8,7 +8,7 @@ from fastapi.security import HTTPBearer
 from jose import JWTError, jwt
 from passlib.context import CryptContext
 
-from realm_sync_api.dependencies.postgres import get_postgres_client
+from .postgres import get_postgres_client
 
 logger = logging.getLogger(__name__)
 
@@ -20,7 +20,6 @@ ALGORITHM = "HS256"
 # Default secret key - should be overridden in production
 DEFAULT_SECRET_KEY = secrets.token_urlsafe(32)
 ACCESS_TOKEN_EXPIRE_MINUTES = 30
-
 
 
 class RealmSyncAuth:

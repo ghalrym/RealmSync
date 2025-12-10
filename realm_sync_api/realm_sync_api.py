@@ -7,12 +7,12 @@ from fastapi import APIRouter, FastAPI, HTTPException, Request
 from starlette.middleware.base import BaseHTTPMiddleware
 from starlette.responses import JSONResponse, Response
 
-from realm_sync_api.dependencies.auth import RealmSyncAuth
-from realm_sync_api.dependencies.hooks import RealmSyncHook, add_hook, get_hooks
-from realm_sync_api.dependencies.postgres import RealmSyncPostgres, set_postgres_client
-from realm_sync_api.dependencies.redis import RealmSyncRedis, set_redis_client
-from realm_sync_api.dependencies.web_manager import WebManager
-from realm_sync_api.routes import router
+from .dependencies.auth import RealmSyncAuth
+from .dependencies.hooks import RealmSyncHook, add_hook, get_hooks
+from .dependencies.postgres import RealmSyncPostgres, set_postgres_client
+from .dependencies.redis import RealmSyncRedis, set_redis_client
+from .dependencies.web_manager import WebManager
+from .routes import router
 
 logger = logging.getLogger(__name__)
 
@@ -40,6 +40,8 @@ class AuthMiddleware(BaseHTTPMiddleware):
             path.startswith("/docs")
             or path.startswith("/openapi.json")
             or path.startswith("/redoc")
+            or path.startswith("/dark_theme.css")
+            or path.startswith("/static/")
             or (self.web_manager_prefix and path.startswith(self.web_manager_prefix.lower()))
         )
         if not skip_auth:

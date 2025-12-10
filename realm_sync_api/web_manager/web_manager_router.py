@@ -6,16 +6,9 @@ from fastapi import APIRouter, Form, HTTPException, Request, status
 from fastapi.responses import FileResponse, HTMLResponse, RedirectResponse, Response
 from starlette.middleware.base import BaseHTTPMiddleware
 
-from realm_sync_api.dependencies.auth import RealmSyncAuth
-from realm_sync_api.web_manager.routers import (
-    item_router,
-    logs_router,
-    map_router,
-    npc_router,
-    players_router,
-    quests_router,
-)
-from realm_sync_api.web_manager.routers.template import templates
+from ..dependencies.auth import RealmSyncAuth
+from .routers import item_router, logs_router, map_router, npc_router, players_router, quests_router
+from .routers.template import templates
 
 router = APIRouter(prefix="/web", tags=["web_manager"])
 
