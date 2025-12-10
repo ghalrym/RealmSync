@@ -15,10 +15,13 @@ COPY example /app/
 # Install realm-sync-api from source first (with the circular import fix)
 # Uninstall any existing version first, then install from source
 # Then install the example project
+# Install without -e to avoid sys.path issues with editable installs
 RUN pip install --no-cache-dir --upgrade pip && \
     pip uninstall -y realm-sync-api || true && \
-    pip install --no-cache-dir --force-reinstall -e /realm_sync_api_source && \
-    pip install --no-cache-dir -e /app
+    cd /realm_sync_api_source && \
+    pip install --no-cache-dir --force-reinstall . && \
+    cd /app && \
+    pip install --no-cache-dir -e .
 
 # Expose the port
 EXPOSE 8000
