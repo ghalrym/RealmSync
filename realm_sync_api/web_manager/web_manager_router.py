@@ -56,14 +56,23 @@ class WebManagerAuthMiddleware(BaseHTTPMiddleware):
 
 class WebManagerRouter(APIRouter):
     def __init__(
-        self, *args: Any, prefix: str = "/web", auth: RealmSyncAuth | None = None, **kwargs: Any
+        self,
+        *args: Any,
+        prefix: str = "/web",
+        auth: RealmSyncAuth | None = None,
+        https_enabled: bool = False,
+        **kwargs: Any,
     ):
         # Get prefix and auth before calling super() so we can use them
         self.auth: RealmSyncAuth | None = auth
-        # Exclude from Swagger UI
-        kwargs.setdefault("include_in_schema", False)
-        kwargs["prefix"] = prefix
-        super().__init__(*args, **kwargs)
+        self.https_enabled = https_enabled
+
+        super().__init__(
+            *args,
+            **kwargs,
+            prefix=prefix,
+            include_in_schema=False,
+        )
 
         # Store the prefix for use in templates (use the actual prefix from the router)
         self.prefix = self.prefix if hasattr(self, "prefix") and self.prefix else prefix
@@ -193,7 +202,7 @@ class WebManagerRouter(APIRouter):
             key="csrf_token",
             value=csrf_token,
             httponly=True,
-            secure=False,  # Set to True in production with HTTPS
+            secure=self.https_enabled,
             samesite="lax",
             max_age=3600,  # 1 hour
         )
@@ -231,7 +240,7 @@ class WebManagerRouter(APIRouter):
                 key="csrf_token",
                 value=new_csrf_token,
                 httponly=True,
-                secure=False,  # Set to True in production with HTTPS
+                secure=self.https_enabled,
                 samesite="lax",
                 max_age=3600,  # 1 hour
             )
@@ -246,7 +255,7 @@ class WebManagerRouter(APIRouter):
                 key="access_token",
                 value=token,
                 httponly=True,
-                secure=False,  # Set to True in production with HTTPS
+                secure=self.https_enabled,
                 samesite="lax",
                 max_age=60 * self.auth.access_token_expire_minutes,
             )
@@ -266,7 +275,7 @@ class WebManagerRouter(APIRouter):
                 key="csrf_token",
                 value=new_csrf_token,
                 httponly=True,
-                secure=False,  # Set to True in production with HTTPS
+                secure=self.https_enabled,
                 samesite="lax",
                 max_age=3600,  # 1 hour
             )
@@ -310,7 +319,7 @@ class WebManagerRouter(APIRouter):
                 key="access_token",
                 value=token,
                 httponly=True,
-                secure=False,  # Set to True in production with HTTPS
+                secure=self.https_enabled,
                 samesite="lax",
                 max_age=60 * self.auth.access_token_expire_minutes,
             )
