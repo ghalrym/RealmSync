@@ -77,6 +77,31 @@ class _InternalPostgresClient:
         assert self._pool is not None
         await self._pool.execute(query, *args)
 
+    async def acquire_connection(self) -> asyncpg.Connection:
+        """
+        Acquire a connection from the pool.
+
+        Ensures the pool exists (calls connect() if needed) and returns an acquired connection.
+
+        Returns:
+            An acquired asyncpg.Connection from the pool
+        """
+        if self._pool is None:
+            await self.connect()
+
+        assert self._pool is not None
+        return await self._pool.acquire()
+
+    async def release_connection(self, conn: asyncpg.Connection) -> None:
+        """
+        Safely release a connection back to the pool.
+
+        Args:
+            conn: The connection to release
+        """
+        if self._pool is not None:
+            await self._pool.release(conn)
+
 
 class RealmSyncDatabase:
     """PostgreSQL database class for managing connections and model operations."""
@@ -1101,12 +1126,8 @@ class RealmSyncDatabase:
             if type(instance) is not model_class:
                 raise ValueError("All instances must be of the same model class")
 
-        # Ensure connection pool is available
-        await self._ensure_connection()
-
         # Acquire a connection from the pool
-        assert self.postgres._pool is not None
-        conn = await self.postgres._pool.acquire()
+        conn = await self.postgres.acquire_connection()
 
         try:
             # Wrap all inserts in a single transaction
@@ -1118,7 +1139,7 @@ class RealmSyncDatabase:
                 return results
         finally:
             # Release the connection back to the pool
-            await self.postgres._pool.release(conn)
+            await self.postgres.release_connection(conn)
 
     async def soft_delete(self, model_class: type[T], instance_id: str) -> None:
         """
