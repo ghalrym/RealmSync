@@ -4,6 +4,8 @@ from typing import Any, Protocol
 
 import fastapi_swagger_dark as fsd
 from fastapi import APIRouter, FastAPI, HTTPException, Request
+from fastapi_csrf_jinja.jinja_processor import csrf_token_processor
+from fastapi_csrf_jinja.middleware import FastAPICSRFJinjaMiddleware
 from starlette.middleware.base import BaseHTTPMiddleware
 from starlette.responses import JSONResponse, Response
 
@@ -14,6 +16,7 @@ from .dependencies.redis import RealmSyncRedis, set_redis_client
 from .dependencies.web_manager import WebManager
 from .models import register_all_models
 from .routes import router
+from .web_manager.routers.template import templates
 
 logger = logging.getLogger(__name__)
 
@@ -81,6 +84,18 @@ class RealmSyncApi(FastAPI):
         if web_manager:
             web_manager_prefix = web_manager.prefix
             self.include_router(web_manager.create_router())
+            # Add CSRF middleware - this automatically injects csrf_token into template context
+            self.add_middleware(
+                FastAPICSRFJinjaMiddleware,
+                secret=web_manager.get_csrf_secret(),
+                cookie_name="csrftoken",
+                header_name="x-csrftoken",
+                cookie_secure=web_manager.https_enabled,
+            )
+            # Add CSRF token processor to templates as a context processor
+            # This makes csrf_token available in all template contexts
+            processor = csrf_token_processor("csrftoken", "x-csrftoken")
+            templates.env.globals["csrf_token"] = processor
 
         # Add auth middleware only if auth is explicitly provided
         # Skip web manager routes as they handle their own authentication
