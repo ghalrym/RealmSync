@@ -3,13 +3,7 @@ import json
 from fastapi import APIRouter, Form, Request, status
 from fastapi.responses import HTMLResponse, RedirectResponse
 
-from ..api import (
-    create_in_api,
-    delete_from_api,
-    fetch_from_api,
-    get_from_api,
-    update_in_api,
-)
+from ..api import create_in_api, delete_from_api, fetch_from_api, get_from_api, update_in_api
 from .auth_dependency import check_auth
 from .template import templates
 

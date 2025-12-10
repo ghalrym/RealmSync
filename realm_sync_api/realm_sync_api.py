@@ -8,10 +8,11 @@ from starlette.middleware.base import BaseHTTPMiddleware
 from starlette.responses import JSONResponse, Response
 
 from .dependencies.auth import RealmSyncAuth
+from .dependencies.database import RealmSyncDatabase, set_postgres_client
 from .dependencies.hooks import RealmSyncHook, add_hook, get_hooks
-from .dependencies.postgres import RealmSyncPostgres, set_postgres_client
 from .dependencies.redis import RealmSyncRedis, set_redis_client
 from .dependencies.web_manager import WebManager
+from .models import register_all_models
 from .routes import router
 
 logger = logging.getLogger(__name__)
@@ -64,7 +65,7 @@ class RealmSyncApi(FastAPI):
         auth: RealmSyncAuth | None = None,
         title: str = "RealmSync API",
         redis_client: RealmSyncRedis | None = None,
-        postgres_client: RealmSyncPostgres | None = None,
+        postgres_client: RealmSyncDatabase | None = None,
         **kwargs: Any,
     ) -> None:
         # Disable default docs to use dark mode version
@@ -94,6 +95,11 @@ class RealmSyncApi(FastAPI):
             set_redis_client(redis_client)
         if postgres_client is not None:
             set_postgres_client(postgres_client)
+
+            # Register all models with the database on startup
+            @self.on_event("startup")
+            async def register_models() -> None:
+                await register_all_models(postgres_client)
 
     def _add_dark_mode_to_swagger(self) -> None:
         """Install dark mode Swagger UI using fastapi-swagger-dark."""

@@ -1,11 +1,11 @@
-"""Custom PostgreSQL client class extending RealmSyncPostgres."""
+"""Custom PostgreSQL client class extending RealmSyncDatabase."""
 
 import os
 
-from realm_sync_api import RealmSyncPostgres
+from realm_sync_api import RealmSyncDatabase
 
 
-class Postgres(RealmSyncPostgres):
+class Postgres(RealmSyncDatabase):
     """Custom PostgreSQL client with configuration from environment variables."""
 
     def __init__(self, **kwargs):
@@ -13,7 +13,7 @@ class Postgres(RealmSyncPostgres):
         Initialize PostgreSQL client.
 
         Args:
-            **kwargs: Additional arguments passed to RealmSyncPostgres
+            **kwargs: Additional arguments passed to RealmSyncDatabase
         """
         super().__init__(
             host=os.getenv("POSTGRES_HOST", "localhost"),
@@ -23,4 +23,3 @@ class Postgres(RealmSyncPostgres):
             database=os.getenv("POSTGRES_DB", "realm_sync_db"),
             **kwargs,
         )
-

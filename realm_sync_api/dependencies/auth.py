@@ -8,7 +8,9 @@ from fastapi.security import HTTPBearer
 from jose import JWTError, jwt
 from passlib.context import CryptContext
 
-from .postgres import get_postgres_client
+from ..models.token import Token
+from ..models.user import User
+from .database import get_postgres_client
 
 logger = logging.getLogger(__name__)
 
@@ -80,51 +82,50 @@ class RealmSyncAuth:
 
     async def _get_token_from_db(self, token: str) -> dict[str, Any] | None:
         """Retrieve token data from PostgreSQL."""
-        postgres_client = get_postgres_client()
-        # Assume postgres client has a method to execute queries
-        # This is a generic interface - actual implementation depends on the postgres client
-        # For now, we'll use a simple approach assuming the client has query methods
+        db = get_postgres_client()
         try:
-            # Try to get token from database
-            # The actual query depends on the postgres client implementation
-            # We'll assume there's a tokens table with columns: token, user_id, expires_at
-            result = await postgres_client.fetch_one(
-                "SELECT user_id, expires_at FROM tokens WHERE token = $1", token
-            )
-            if result:
-                return {"user_id": result["user_id"], "expires_at": result["expires_at"]}
+            # Register Token model if not already registered
+            await db.register_model(Token)
+            # Get token from database
+            tokens = await db.select(Token, filters={"id": token})
+            if tokens:
+                token_obj = tokens[0]
+                return {"user_id": token_obj.user_id, "expires_at": token_obj.expires_at}
             return None
-        except AttributeError:
-            # If the postgres client doesn't have fetch_one, we'll validate via JWT only
-            # This allows flexibility for different postgres client implementations
+        except Exception:
+            # If database operation fails, return None to allow JWT-only validation
             return None
 
     async def _store_token_in_db(self, token: str, user_id: str, expires_at: datetime) -> None:
         """Store token in PostgreSQL."""
-        postgres_client = get_postgres_client()
+        db = get_postgres_client()
         try:
-            # Store token in database
-            # The actual query depends on the postgres client implementation
-            await postgres_client.execute(
-                "INSERT INTO tokens (token, user_id, expires_at) VALUES ($1, $2, $3) "
-                "ON CONFLICT (token) DO UPDATE SET expires_at = $3",
+            # Register Token model if not already registered
+            await db.register_model(Token)
+            # Use internal postgres client for upsert operation
+            # This handles the ON CONFLICT case that models don't support yet
+            await db.postgres.execute(
+                "INSERT INTO tokens (id, user_id, expires_at) VALUES ($1, $2, $3) "
+                "ON CONFLICT (id) DO UPDATE SET expires_at = $3, user_id = $2",
                 token,
                 user_id,
                 expires_at,
             )
-        except AttributeError:
-            # If the postgres client doesn't have execute, skip database storage
-            # This allows flexibility for different postgres client implementations
-            pass
+        except Exception:
+            # If database operation fails, skip database storage
+            logger.exception("Failed to store token in database during upsert operation")
 
     async def _revoke_token_in_db(self, token: str) -> None:
         """Revoke token in PostgreSQL."""
-        postgres_client = get_postgres_client()
+        db = get_postgres_client()
         try:
-            await postgres_client.execute("DELETE FROM tokens WHERE token = $1", token)
-        except AttributeError:
-            # If the postgres client doesn't have execute, skip database revocation
-            pass
+            # Register Token model if not already registered
+            await db.register_model(Token)
+            # Soft delete the token
+            await db.soft_delete(Token, token)
+        except Exception:
+            # If database operation fails, skip database revocation
+            logger.exception("Failed to revoke token in DB")
 
     async def validate_session(self, request: Request) -> bool:
         """
@@ -285,13 +286,20 @@ class RealmSyncAuth:
         Raises:
             HTTPException: If the user already exists
         """
-        postgres_client = get_postgres_client()
+        db = get_postgres_client()
         try:
-            # Check if user already exists
-            existing_user = await postgres_client.fetch_one(
-                "SELECT id FROM users WHERE username = $1 OR email = $2", username, email
-            )
-            if existing_user:
+            # Register User model if not already registered
+            await db.register_model(User)
+            # Check if user already exists by username
+            existing_by_username = await db.select(User, filters={"username": username})
+            if existing_by_username:
+                raise HTTPException(
+                    status_code=status.HTTP_400_BAD_REQUEST,
+                    detail="Username or email already exists",
+                )
+            # Check if user already exists by email
+            existing_by_email = await db.select(User, filters={"email": email})
+            if existing_by_email:
                 raise HTTPException(
                     status_code=status.HTTP_400_BAD_REQUEST,
                     detail="Username or email already exists",
@@ -303,23 +311,17 @@ class RealmSyncAuth:
             created_at = datetime.now(UTC)
 
             # Create user
-            await postgres_client.execute(
-                "INSERT INTO users (id, username, email, hashed_password, is_active, created_at) "
-                "VALUES ($1, $2, $3, $4, $5, $6)",
-                user_id,
-                username,
-                email,
-                hashed_password,
-                True,
-                created_at,
+            user = User(
+                id=user_id,
+                username=username,
+                email=email,
+                hashed_password=hashed_password,
+                is_active=True,
+                created_at=created_at,
             )
+            await db.create(user)
 
             return {"user_id": user_id, "username": username, "email": email}
-        except AttributeError as e:
-            raise HTTPException(
-                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-                detail="Database client not properly configured",
-            ) from e
         except HTTPException:
             raise
         except Exception as e:
@@ -343,47 +345,43 @@ class RealmSyncAuth:
         Raises:
             HTTPException: If authentication fails
         """
-        postgres_client = get_postgres_client()
+        db = get_postgres_client()
         try:
-            # Find user by username or email
-            user = await postgres_client.fetch_one(
-                "SELECT id, username, email, hashed_password, is_active FROM users "
-                "WHERE username = $1 OR email = $1",
-                username,
-            )
+            # Register User model if not already registered
+            await db.register_model(User)
+            # Find user by username first
+            users = await db.select(User, filters={"username": username})
+            # If not found, try email
+            if not users:
+                users = await db.select(User, filters={"email": username})
 
-            if not user:
+            if not users:
                 raise HTTPException(
                     status_code=status.HTTP_401_UNAUTHORIZED,
                     detail="Incorrect username or password",
                 )
 
-            if not user.get("is_active"):
+            user = users[0]
+
+            if not user.is_active:
                 raise HTTPException(
                     status_code=status.HTTP_401_UNAUTHORIZED,
                     detail="User account is inactive",
                 )
 
             # Verify password
-            hashed_password = user.get("hashed_password")
-            if not hashed_password or not self.verify_password(password, hashed_password):
+            if not user.hashed_password or not self.verify_password(password, user.hashed_password):
                 raise HTTPException(
                     status_code=status.HTTP_401_UNAUTHORIZED,
                     detail="Incorrect username or password",
                 )
 
             # Create token
-            user_id = user.get("id")
-            token = await self.create_token(user_id)
+            token = await self.create_token(user.id)
 
             return token
         except HTTPException:
             raise
-        except AttributeError as e:
-            raise HTTPException(
-                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-                detail="Database client not properly configured",
-            ) from e
         except Exception as e:
             logger.exception("Error during user login")
             raise HTTPException(

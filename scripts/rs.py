@@ -155,22 +155,24 @@ def start_project() -> None:
     # Create main.py with custom configuration
     # Build main.py content based on selected options
     main_lines = ['"""Main application entry point."""', ""]
+    main_lines.append("import os")
+    main_lines.append("")
 
     imports = ["from realm_sync_api import RealmSyncApi"]
     if use_auth:
-        imports.append(f"from {package_name}.auth import Auth")
+        imports.append("from realm_sync_api.dependencies.auth import RealmSyncAuth")
     if use_web_manager:
         imports.append("from realm_sync_api.dependencies.web_manager import WebManager")
     if use_redis:
-        imports.append(f"from {package_name}.redis import Redis")
+        imports.append("from realm_sync_api import RealmSyncRedis")
     if use_postgres:
-        imports.append(f"from {package_name}.postgres import Postgres")
+        imports.append("from realm_sync_api import RealmSyncDatabase")
 
     main_lines.extend(imports)
     main_lines.append("")
 
     if use_auth:
-        main_lines.append("auth = Auth()")
+        main_lines.append("auth = RealmSyncAuth()")
         main_lines.append("")
 
     app_args = []
@@ -182,11 +184,21 @@ def start_project() -> None:
             web_manager_args += "\n        auth=auth,"
         app_args.append(f"    web_manager=WebManager(\n{web_manager_args}\n    ),")
     if use_redis:
-        main_lines.append("redis_client = Redis()")
+        main_lines.append("redis_client = RealmSyncRedis(")
+        main_lines.append('    host=os.getenv("REDIS_HOST", "localhost"),')
+        main_lines.append('    port=int(os.getenv("REDIS_PORT", "6379")),')
+        main_lines.append('    db=int(os.getenv("REDIS_DB", "0")),')
+        main_lines.append(")")
         main_lines.append("")
         app_args.append("    redis_client=redis_client,")
     if use_postgres:
-        main_lines.append("postgres_client = Postgres()")
+        main_lines.append("postgres_client = RealmSyncDatabase(")
+        main_lines.append('    host=os.getenv("POSTGRES_HOST", "localhost"),')
+        main_lines.append('    port=int(os.getenv("POSTGRES_PORT", "5432")),')
+        main_lines.append('    user=os.getenv("POSTGRES_USER", "realm_sync"),')
+        main_lines.append('    password=os.getenv("POSTGRES_PASSWORD", "realm_sync_password"),')
+        main_lines.append('    database=os.getenv("POSTGRES_DB", "realm_sync_db"),')
+        main_lines.append(")")
         main_lines.append("")
         app_args.append("    postgres_client=postgres_client,")
 

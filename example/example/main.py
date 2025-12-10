@@ -1,10 +1,10 @@
 """Main application entry point."""
 
-from realm_sync_api import RealmSyncApi
 from example.auth import Auth
-from realm_sync_api.dependencies.web_manager import WebManager
-from example.redis import Redis
 from example.postgres import Postgres
+from example.redis import Redis
+from realm_sync_api import RealmSyncApi
+from realm_sync_api.dependencies.web_manager import WebManager
 
 auth = Auth()
 

@@ -2,7 +2,7 @@
 
 import os
 
-from realm_sync_api import RealmSyncApi, RealmSyncPostgres, RealmSyncRedis
+from realm_sync_api import RealmSyncApi, RealmSyncDatabase, RealmSyncRedis
 from realm_sync_api.dependencies.auth import RealmSyncAuth
 from realm_sync_api.dependencies.web_manager import WebManager
 
@@ -19,7 +19,7 @@ app = RealmSyncApi(
         port=int(os.getenv("REDIS_PORT", "6379")),
         db=int(os.getenv("REDIS_DB", "0")),
     ),
-    postgres_client=RealmSyncPostgres(
+    postgres_client=RealmSyncDatabase(
         host=os.getenv("POSTGRES_HOST", "localhost"),
         port=int(os.getenv("POSTGRES_PORT", "5432")),
         user=os.getenv("POSTGRES_USER", "realm_sync"),
@@ -27,4 +27,3 @@ app = RealmSyncApi(
         database=os.getenv("POSTGRES_DB", "realm_sync_db"),
     ),
 )
-
