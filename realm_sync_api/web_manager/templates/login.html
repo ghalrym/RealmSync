@@ -135,6 +135,7 @@
             {% endif %}
 
             <form method="post" action="{{ web_prefix }}/login">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
                 <div class="form-group">
                     <label for="username">Username or Email</label>
                     <input type="text" id="username" name="username" class="form-control" required autofocus>

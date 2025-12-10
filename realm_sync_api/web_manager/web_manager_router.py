@@ -1,3 +1,4 @@
+import secrets
 from collections.abc import Awaitable, Callable
 from pathlib import Path
 from typing import Any
@@ -181,10 +182,29 @@ class WebManagerRouter(APIRouter):
                 )
             except HTTPException:
                 pass
-        return templates.TemplateResponse("login.html", {"request": request})
+
+        # Generate CSRF token
+        csrf_token = secrets.token_urlsafe(32)
+        response = templates.TemplateResponse(
+            "login.html", {"request": request, "csrf_token": csrf_token}
+        )
+        # Store CSRF token in cookie
+        response.set_cookie(
+            key="csrf_token",
+            value=csrf_token,
+            httponly=True,
+            secure=False,  # Set to True in production with HTTPS
+            samesite="lax",
+            max_age=3600,  # 1 hour
+        )
+        return response
 
     async def login_post(
-        self, request: Request, username: str = Form(...), password: str = Form(...)
+        self,
+        request: Request,
+        username: str = Form(...),
+        password: str = Form(...),
+        csrf_token: str = Form(...),
     ):
         """Handle login form submission."""
         if not self.auth:
@@ -192,6 +212,30 @@ class WebManagerRouter(APIRouter):
                 status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
                 detail="Authentication not configured",
             )
+
+        # Validate CSRF token
+        cookie_csrf_token = request.cookies.get("csrf_token")
+        if not cookie_csrf_token or cookie_csrf_token != csrf_token:
+            # Regenerate CSRF token for retry
+            new_csrf_token = secrets.token_urlsafe(32)
+            template_response = templates.TemplateResponse(
+                "login.html",
+                {
+                    "request": request,
+                    "error": "Invalid CSRF token. Please try again.",
+                    "csrf_token": new_csrf_token,
+                },
+                status_code=status.HTTP_403_FORBIDDEN,
+            )
+            template_response.set_cookie(
+                key="csrf_token",
+                value=new_csrf_token,
+                httponly=True,
+                secure=False,  # Set to True in production with HTTPS
+                samesite="lax",
+                max_age=3600,  # 1 hour
+            )
+            return template_response
 
         try:
             token = await self.auth.login(username, password)
@@ -206,14 +250,27 @@ class WebManagerRouter(APIRouter):
                 samesite="lax",
                 max_age=60 * self.auth.access_token_expire_minutes,
             )
+            # Clear CSRF token after successful login
+            response.delete_cookie(key="csrf_token")
             return response
         except HTTPException as e:
             # Return to login page with error
-            return templates.TemplateResponse(
+            # Regenerate CSRF token for retry
+            new_csrf_token = secrets.token_urlsafe(32)
+            template_response = templates.TemplateResponse(
                 "login.html",
-                {"request": request, "error": e.detail},
+                {"request": request, "error": e.detail, "csrf_token": new_csrf_token},
                 status_code=status.HTTP_401_UNAUTHORIZED,
             )
+            template_response.set_cookie(
+                key="csrf_token",
+                value=new_csrf_token,
+                httponly=True,
+                secure=False,  # Set to True in production with HTTPS
+                samesite="lax",
+                max_age=3600,  # 1 hour
+            )
+            return template_response
 
     async def signup_page(self, request: Request):
         """Show signup page."""
